@@ -203,6 +203,9 @@
     padding:13px 16px;border-radius:12px;font-size:15px;font-family:inherit;cursor:pointer;text-align:left;transition:.15s;
   }
   .fr-role:hover{border-color:var(--accent);background:rgba(232,184,102,0.08)}
+  .fr-role.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;text-align:center}
+  .fr-role.primary:hover{background:var(--accent);filter:brightness(1.05)}
+  .fr-or{font-size:12px;color:var(--ink-faint);text-align:center;letter-spacing:.5px;margin:4px 0 8px}
   .fr-skip{background:none;border:none;color:var(--ink-faint);font:inherit;font-size:13px;cursor:pointer;padding:6px 0;border-bottom:1px dotted var(--ink-faint)}
   .fr-skip:hover{color:var(--accent)}
 
@@ -483,9 +486,9 @@
 <div class="firstrun" id="firstRun" hidden>
   <div class="fr-inner">
     <div class="fr-mark">◗</div>
-    <div class="fr-eyebrow">The first day</div>
-    <div class="fr-title">Who are you today?</div>
-    <p class="fr-sub">First Light speaks differently to a father than to a son. Choose the one that fits &mdash; you can switch anytime, with a tap on the card.</p>
+    <div class="fr-eyebrow" id="frEyebrow">The first day</div>
+    <div class="fr-title" id="frTitle">Who are you today?</div>
+    <p class="fr-sub" id="frSub">First Light speaks differently to a father than to a son. Choose the one that fits &mdash; you can switch anytime, with a tap on the card.</p>
     <div class="fr-roles" id="frRoles"></div>
     <button class="fr-skip" id="frSkip">show me first &rarr;</button>
   </div>
@@ -510,7 +513,7 @@
     prevAnchor:"fl_prev_anchor", visits:"fl_visits", total:"fl_total", reflect:"fl_reflect_", remind:"fl_remind",
     lock:"fl_lock", discreet:"fl_discreet", backup:"fl_backup",
     seen:"fl_seen", mine:"fl_mine", todayWord:"fl_today_word",
-    onboarded:"fl_onboarded", firstSeen:"fl_first_seen", hints:"fl_hints"
+    onboarded:"fl_onboarded", firstSeen:"fl_first_seen", hints:"fl_hints", roleDay:"fl_role_day"
   };
   function get(k){try{return localStorage.getItem(k)}catch(e){return null}}
   function set(k,v){try{localStorage.setItem(k,v)}catch(e){}}
@@ -1101,7 +1104,7 @@
   }
 
   function setRole(r){
-    role=r; set(LS.role,r);
+    role=r; set(LS.role,r); set(LS.roleDay, today());
     renderRoles(); buildMiniRoles(); renderWord();
     if(typeof renderEvening==="function") renderEvening();
     var pp=document.getElementById("prayerPane");
@@ -1562,19 +1565,49 @@
   }
 
   function needsFirstRun(){ return !get(LS.onboarded) && !get(LS.role); }
-  function showFirstRun(){
+  function aRole(r){ return (/^[AEIOU]/.test(r) ? "an " : "a ") + r; }
+
+  function showFirstRun(returning){
+    var cur=get(LS.role);
+    returning = !!returning && cur && ROLES.indexOf(cur)>=0;
     var box=document.getElementById("frRoles"); box.innerHTML="";
-    ROLES.forEach(function(r){
-      var b=document.createElement("button"); b.type="button"; b.className="fr-role"; b.textContent=r;
-      b.onclick=function(){ setRole(r); finishFirstRun(); };
-      box.appendChild(b);
-    });
-    document.getElementById("frSkip").onclick=finishFirstRun;
+    var skip=document.getElementById("frSkip");
+
+    if(returning){
+      document.getElementById("frEyebrow").textContent="Today";
+      document.getElementById("frTitle").textContent="Who are you today?";
+      document.getElementById("frSub").textContent="You came as "+aRole(cur)+" last time. Still, or someone else today?";
+      var keep=document.createElement("button");
+      keep.type="button"; keep.className="fr-role primary"; keep.textContent="Still "+cur+" →";
+      keep.onclick=function(){ setRole(cur); finishFirstRun(); };
+      box.appendChild(keep);
+      var or=document.createElement("div"); or.className="fr-or"; or.textContent="or someone else today";
+      box.appendChild(or);
+      ROLES.filter(function(r){ return r!==cur; }).forEach(function(r){
+        var b=document.createElement("button"); b.type="button"; b.className="fr-role"; b.textContent=r;
+        b.onclick=function(){ setRole(r); finishFirstRun(); };
+        box.appendChild(b);
+      });
+      skip.hidden=true;
+    } else {
+      document.getElementById("frEyebrow").textContent="The first day";
+      document.getElementById("frTitle").textContent="Who are you today?";
+      document.getElementById("frSub").textContent="First Light speaks differently to a father than to a son. Choose the one that fits — you can switch anytime, with a tap on the card.";
+      ROLES.forEach(function(r){
+        var b=document.createElement("button"); b.type="button"; b.className="fr-role"; b.textContent=r;
+        b.onclick=function(){ setRole(r); finishFirstRun(); };
+        box.appendChild(b);
+      });
+      skip.hidden=false;
+      skip.textContent="show me first →";
+      skip.onclick=finishFirstRun;
+    }
     document.getElementById("firstRun").hidden=false;
   }
   function finishFirstRun(){
     set(LS.onboarded,"1");
     if(!get(LS.firstSeen)) set(LS.firstSeen, today());
+    if(!get(LS.roleDay)) set(LS.roleDay, today());
     document.getElementById("firstRun").hidden=true;
     renderWord(); renderActions();
   }
@@ -2140,14 +2173,17 @@
   if(lockOn()){ lockNow(); tryBio(); }
   applyDiscreet();
 
-  /* first day: one question, then the card */
+  /* who are you today? — the first day, and the start of every day after */
   if(needsFirstRun()){
-    showFirstRun();
+    showFirstRun(false);
   } else {
-    // existing / returning user — already past the first day
     if(!get(LS.onboarded)) set(LS.onboarded,"1");
     if(!get(LS.firstSeen)) set(LS.firstSeen,"0");
-    renderCardHint();
+    if(get(LS.roleDay)!==today()){
+      showFirstRun(true);
+    } else {
+      renderCardHint();
+    }
   }
 
   /* offline: cache the app so it opens with no signal */
