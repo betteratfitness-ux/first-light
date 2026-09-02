@@ -1,0 +1,2169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1026" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" type="image/svg+xml" href="/icon.svg" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="First Light" />
+<title>First Light</title>
+<style>
+  :root{
+    --bg-top:#0b1026;
+    --bg-bot:#161d3f;
+    --ink:#f4f1e8;
+    --ink-soft:rgba(244,241,232,0.68);
+    --ink-faint:rgba(244,241,232,0.42);
+    --card:rgba(255,255,255,0.06);
+    --card-line:rgba(255,255,255,0.14);
+    --accent:#e8b866;
+    --accent-ink:#2a1e08;
+    --ok:#8fc9a6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,var(--bg-top),var(--bg-bot));
+    background-attachment:fixed;
+    min-height:100%;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    transition:background 1.2s ease;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap{max-width:620px;margin:0 auto;padding:28px 20px 64px}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+  .brand{font-family:Georgia,serif;font-size:20px;letter-spacing:.5px}
+  .brand .dot{color:var(--accent)}
+  .clock{font-size:13px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+
+  .phase-line{font-size:13px;color:var(--ink-soft);margin-bottom:22px}
+  .phase-line b{color:var(--accent);font-weight:600}
+
+  .label{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+
+  .roles{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:26px}
+  .role{
+    border:1px solid var(--card-line);background:transparent;color:var(--ink-soft);
+    padding:8px 14px;border-radius:999px;font-size:13px;cursor:pointer;transition:.18s;
+  }
+  .role:hover{border-color:var(--accent)}
+  .role[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+
+  /* subtle mid-day role switch, tucked into the card kicker */
+  .role-swap{
+    font:inherit;letter-spacing:inherit;text-transform:inherit;
+    background:none;border:none;padding:0;margin:0;cursor:pointer;
+    color:var(--accent);border-bottom:1px dotted rgba(232,184,102,0.55);
+  }
+  .role-swap:hover{border-bottom-color:var(--accent)}
+  .rs-caret{margin-left:3px;font-size:0.85em;opacity:0.7}
+  .mini-roles{display:none;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
+  .mini-roles.on{display:flex;animation:miniIn .16s ease}
+  @keyframes miniIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  .mini-role{
+    border:1px solid var(--card-line);background:rgba(0,0,0,0.2);color:var(--ink-soft);
+    padding:5px 11px;border-radius:999px;font-size:12px;cursor:pointer;transition:.15s;
+  }
+  .mini-role:hover{border-color:var(--accent)}
+  .mini-role[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+
+  .card{
+    background:var(--card);border:1px solid var(--card-line);border-radius:18px;
+    padding:24px 22px;margin-bottom:18px;backdrop-filter:blur(4px);
+  }
+  .card .kicker{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+  .word{font-family:Georgia,serif;font-size:20px;line-height:1.5}
+  .word.small{font-size:17px}
+  .refresh{
+    margin-top:16px;background:none;border:none;color:var(--ink-faint);font-size:12px;
+    letter-spacing:.5px;cursor:pointer;padding:4px 0;
+  }
+  .refresh:hover{color:var(--accent)}
+  .word-actions{display:flex;gap:18px;margin-top:16px;flex-wrap:wrap}
+  .word-actions .refresh{margin-top:0}
+
+  .anchor textarea{
+    width:100%;background:rgba(0,0,0,0.22);border:1px solid var(--card-line);border-radius:12px;
+    color:var(--ink);font-size:15px;font-family:inherit;padding:12px;resize:vertical;min-height:64px;
+  }
+  .anchor textarea:focus{outline:none;border-color:var(--accent)}
+  .saved{font-size:12px;color:var(--ok);margin-top:8px;min-height:16px}
+  .anchor .prev{font-family:Georgia,serif;font-size:16px;color:var(--ink);margin-top:4px}
+
+  .btn{
+    background:var(--accent);color:var(--accent-ink);border:none;border-radius:12px;
+    padding:13px 18px;font-size:15px;font-weight:600;cursor:pointer;width:100%;transition:.18s;
+  }
+  .btn:hover{filter:brightness(1.06)}
+  .btn.ghost{background:transparent;border:1px solid var(--card-line);color:var(--ink-soft);font-weight:500}
+
+  .help-themes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+  .help-themes button{
+    border:1px solid var(--card-line);background:rgba(0,0,0,0.18);color:var(--ink);
+    padding:14px 12px;border-radius:12px;font-size:13px;cursor:pointer;text-align:left;line-height:1.35;transition:.16s;
+  }
+  .help-themes button:hover{border-color:var(--accent)}
+  @media(max-width:430px){.help-themes{grid-template-columns:1fr}}
+
+  .eve-anchor{font-size:13px;color:var(--ink-soft);margin:12px 0 2px;font-style:italic}
+  .eve-tabs{display:flex;gap:8px;margin-top:16px}
+  .eve-tab{
+    flex:1;border:1px solid var(--card-line);background:rgba(0,0,0,0.18);color:var(--ink-soft);
+    padding:11px;border-radius:12px;font-size:13px;cursor:pointer;transition:.16s;
+  }
+  .eve-tab:hover{border-color:var(--accent)}
+  .eve-tab[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  .eve-pane{display:none;margin-top:16px}
+  .eve-pane.on{display:block}
+  .eve-pane .prayer-body{font-family:Georgia,serif;font-size:18px;line-height:1.6}
+  .eve-pane .amen{display:block;margin-top:10px;font-size:13px;letter-spacing:2px;color:var(--ink-faint);text-transform:uppercase}
+
+  .add-steps{display:none;margin-top:14px;background:rgba(0,0,0,0.22);border:1px solid var(--card-line);border-radius:12px;padding:14px 16px}
+  .add-steps.on{display:block}
+  .add-steps ol{margin:0;padding-left:22px}
+  .add-steps li{font-size:14px;color:var(--ink-soft);margin:7px 0;line-height:1.5}
+  .add-steps b{color:var(--ink)}
+  .add-steps .ic{display:inline-block;border:1px solid var(--ink-faint);border-radius:5px;padding:0 6px;margin:0 1px;font-size:12px;color:var(--ink)}
+
+  .remind-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--card-line)}
+  .remind-row:last-child{border-bottom:none}
+  .remind-row input[type="checkbox"]{width:18px;height:18px;flex:none;accent-color:var(--accent)}
+  .remind-name{flex:1;font-size:14px;color:var(--ink)}
+  .remind-row input[type="time"]{
+    background:rgba(0,0,0,0.28);color:var(--ink);border:1px solid var(--card-line);
+    border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;
+  }
+  .mlink{background:none;border:none;color:var(--ink-faint);font-size:12px;font-family:inherit;cursor:pointer;border-bottom:1px dotted var(--ink-faint);padding:0;margin-top:12px}
+  .mlink:hover{color:var(--accent)}
+
+  .help-reach{margin:4px 0 18px;padding-bottom:18px;border-bottom:1px solid var(--card-line)}
+  .help-reach p{font-size:13px;color:var(--ink-soft);margin-bottom:10px}
+  .help-reach .reach-row{display:flex;gap:8px}
+  .help-reach .reach-row a{
+    flex:1;text-align:center;text-decoration:none;padding:13px 8px;border-radius:12px;
+    font-size:14px;font-weight:600;
+  }
+  .help-reach .r-text{background:var(--accent);color:var(--accent-ink)}
+  .help-reach .r-call{border:1px solid var(--card-line);color:var(--ink)}
+  .help-reach .r-setup{
+    display:block;width:100%;background:none;border:1px dashed var(--card-line);color:var(--ink-soft);
+    padding:12px;border-radius:12px;font:inherit;font-size:13px;cursor:pointer;
+  }
+  .help-reach .r-setup:hover{border-color:var(--accent);color:var(--ink)}
+  .help-reach .r-edit{background:none;border:none;color:var(--ink-faint);font:inherit;font-size:11px;cursor:pointer;margin-top:8px;border-bottom:1px dotted var(--ink-faint);padding:0}
+
+  .bk-field{display:block;margin:12px 0}
+  .bk-field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px}
+  .bk-field input,.bk-field textarea{
+    width:100%;background:rgba(0,0,0,0.28);border:1px solid var(--card-line);border-radius:12px;
+    color:var(--ink);font-size:15px;font-family:inherit;padding:11px;
+  }
+  .bk-field textarea{min-height:96px;resize:vertical;line-height:1.5}
+  .bk-field input:focus,.bk-field textarea:focus{outline:none;border-color:var(--accent)}
+
+  .mine-when{display:flex;gap:8px}
+  .mine-when button{
+    flex:1;border:1px solid var(--card-line);background:rgba(0,0,0,0.2);color:var(--ink-soft);
+    padding:9px 6px;border-radius:10px;font-size:12px;font-family:inherit;cursor:pointer;
+  }
+  .mine-when button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  .mine-item{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--card-line);font-size:14px;line-height:1.5}
+  .mine-item .mi-txt{flex:1;font-family:Georgia,serif}
+  .mine-item .mi-when{font-size:11px;color:var(--ink-faint);white-space:nowrap;padding-top:3px}
+  .mine-item .mi-del{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:14px;padding:0 2px;flex:none}
+  .mine-item .mi-del:hover{color:#e6a3a3}
+
+  [hidden]{display:none!important}
+
+  /* first run — the one screen before the card */
+  .firstrun{
+    position:fixed;inset:0;z-index:1800;background:#080b18;
+    display:flex;align-items:center;justify-content:center;
+    padding:32px calc(24px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
+    padding-top:calc(32px + env(safe-area-inset-top));
+    overflow-y:auto;
+  }
+  .fr-inner{width:100%;max-width:340px}
+  .fr-mark{font-size:30px;line-height:1;color:var(--accent);margin-bottom:14px}
+  .fr-eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+  .fr-title{font-family:Georgia,serif;font-weight:normal;font-size:24px;color:var(--ink);margin-bottom:10px}
+  .fr-sub{font-size:14px;color:var(--ink-soft);line-height:1.55;margin-bottom:22px}
+  .fr-roles{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+  .fr-role{
+    border:1px solid var(--card-line);background:rgba(255,255,255,0.04);color:var(--ink);
+    padding:13px 16px;border-radius:12px;font-size:15px;font-family:inherit;cursor:pointer;text-align:left;transition:.15s;
+  }
+  .fr-role:hover{border-color:var(--accent);background:rgba(232,184,102,0.08)}
+  .fr-skip{background:none;border:none;color:var(--ink-faint);font:inherit;font-size:13px;cursor:pointer;padding:6px 0;border-bottom:1px dotted var(--ink-faint)}
+  .fr-skip:hover{color:var(--accent)}
+
+  /* a single quiet hint under the card */
+  .card-hint{
+    display:flex;align-items:center;gap:10px;justify-content:center;flex-wrap:wrap;
+    margin-top:16px;font-size:12.5px;color:var(--ink-soft);
+  }
+  .card-hint.empty{display:none}
+  .card-hint button.hint-go{
+    background:none;border:none;color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;
+    border-bottom:1px dotted rgba(232,184,102,0.6);padding:0;
+  }
+  .card-hint button.hint-x{
+    background:none;border:none;color:var(--ink-faint);font:inherit;cursor:pointer;padding:0 2px;line-height:1;
+  }
+  .card-hint button.hint-x:hover{color:var(--ink)}
+
+  .lock-screen{
+    position:fixed;inset:0;z-index:2000;background:#080b18;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px calc(24px + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(24px + env(safe-area-inset-left));
+    padding-top:calc(24px + env(safe-area-inset-top));
+  }
+  .lock-inner{width:100%;max-width:288px;text-align:center}
+  .lock-mark{font-size:32px;line-height:1;color:var(--accent);margin-bottom:12px}
+  .lock-title{font-family:Georgia,serif;font-size:19px;color:var(--ink);margin-bottom:28px}
+  .pin-dots{display:flex;gap:14px;justify-content:center;margin-bottom:30px;height:13px}
+  .pin-dots i{width:12px;height:12px;border-radius:50%;border:1px solid var(--ink-faint)}
+  .pin-dots i.on{background:var(--accent);border-color:var(--accent)}
+  .pin-dots.shake{animation:shk .4s}
+  @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+  .pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:240px;margin:0 auto}
+  .pin-pad button{
+    height:64px;border:1px solid var(--card-line);background:rgba(255,255,255,0.045);color:var(--ink);
+    border-radius:50%;font-size:22px;font-family:inherit;cursor:pointer;transition:.1s;
+  }
+  .pin-pad button:active{background:var(--accent);color:var(--accent-ink)}
+  .pin-pad button.blank{border:none;background:none;cursor:default}
+  .pin-pad button.wide{border-radius:20px;font-size:15px}
+  .lock-err{color:#e6a3a3;font-size:13px;margin-top:18px;min-height:18px}
+  #lockBioBtn{margin-top:20px}
+
+  .lock-setup .field{display:block;margin:12px 0}
+  .lock-setup label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px}
+  .lock-setup input[type="tel"]{
+    width:100%;background:rgba(0,0,0,0.28);border:1px solid var(--card-line);border-radius:12px;
+    color:var(--ink);font-size:20px;letter-spacing:8px;text-align:center;padding:12px;font-family:inherit;
+  }
+  .lock-setup input[type="tel"]:focus{outline:none;border-color:var(--accent)}
+  .lock-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--card-line)}
+  .lock-row span{flex:1;font-size:14px;color:var(--ink)}
+  .lock-row input[type="checkbox"]{width:18px;height:18px;flex:none;accent-color:var(--accent)}
+  .lock-on{color:var(--ok);font-size:13px;margin:4px 0 4px}
+
+  .modal-back{
+    position:fixed;inset:0;background:rgba(4,6,18,0.78);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;padding:20px;z-index:40;
+  }
+  .modal-back.on{display:flex}
+  .modal{
+    background:linear-gradient(180deg,#161d3f,#0f1430);border:1px solid var(--card-line);
+    border-radius:20px;max-width:520px;width:100%;padding:26px 22px;max-height:88vh;overflow-y:auto;
+  }
+  .modal .x{float:right;background:none;border:none;color:var(--ink-faint);font-size:22px;cursor:pointer;line-height:1}
+  .modal h3{font-family:Georgia,serif;font-weight:normal;font-size:19px;margin-bottom:14px;color:var(--accent)}
+  .modal .word{font-size:19px;margin-bottom:18px}
+
+  .breath{text-align:center;margin:18px 0 6px;display:none}
+  .breath.on{display:block}
+  .orb{
+    width:130px;height:130px;border-radius:50%;margin:14px auto;
+    background:radial-gradient(circle at 40% 35%,rgba(232,184,102,0.9),rgba(232,184,102,0.15));
+    transition:transform 4s ease-in-out;
+  }
+  .orb.expand{transform:scale(1.45)}
+  .breath .cue{font-family:Georgia,serif;font-size:17px;color:var(--ink);min-height:24px}
+  .breath .count{font-size:12px;color:var(--ink-faint);letter-spacing:1px}
+
+  .reflect-row{display:flex;gap:8px;margin-top:6px}
+  .reflect-row button{
+    flex:1;border:1px solid var(--card-line);background:rgba(0,0,0,0.18);color:var(--ink-soft);
+    padding:12px 6px;border-radius:12px;font-size:13px;cursor:pointer;transition:.16s;
+  }
+  .reflect-row button:hover{border-color:var(--accent)}
+  .reflect-row button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+  .streak{font-size:12px;color:var(--ink-faint);margin-top:12px;text-align:center}
+  .streak b{color:var(--ok)}
+
+  .foot{margin-top:30px;font-size:12px;color:var(--ink-faint);text-align:center;line-height:1.7}
+  .foot a{color:inherit;border-bottom:1px dotted var(--ink-faint);cursor:pointer;white-space:nowrap;display:inline-block}
+  .foot a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+  .foot-note{display:block;margin-top:16px;max-width:34em;margin-left:auto;margin-right:auto}
+  .phase-switch{margin-top:14px;text-align:center}
+  .phase-switch select{
+    background:rgba(0,0,0,0.25);color:var(--ink-soft);border:1px solid var(--card-line);
+    border-radius:8px;padding:6px 8px;font-size:12px;font-family:inherit;
+  }
+
+  /* one card, everything else on demand */
+  .actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:20px}
+  .action{
+    border:1px solid var(--card-line);background:transparent;color:var(--ink-soft);
+    padding:9px 15px;border-radius:999px;font-size:13px;font-family:inherit;cursor:pointer;transition:.16s;
+  }
+  .action:hover{border-color:var(--accent);color:var(--ink)}
+  .action.lead{border-color:rgba(232,184,102,0.5);color:var(--ink)}
+
+  .mpanel{display:none}
+  .mpanel.on{display:block}
+  .msub{font-size:13px;color:var(--ink-soft);margin:-6px 0 16px}
+  .mdiv{border:none;border-top:1px solid var(--card-line);margin:22px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand serif">First Light<span class="dot">.</span></div>
+    <div class="clock" id="clock"></div>
+  </header>
+  <div class="phase-line" id="phaseLine"></div>
+
+  <div class="card" id="momentCard">
+    <div class="kicker" id="wordKicker">A word for right now</div>
+    <div class="mini-roles" id="miniRoles"></div>
+    <div class="word" id="wordText"></div>
+    <div class="word-actions">
+      <button class="refresh" id="wordRefresh">↺ another</button>
+      <button class="refresh" id="wordMine">+ add your own</button>
+    </div>
+  </div>
+
+  <div class="actions" id="actions"></div>
+  <div class="card-hint empty" id="cardHint"></div>
+
+  <div class="phase-switch" id="phaseSwitchWrap" style="display:none">
+    <select id="phaseSwitch" title="Read words for another part of the day">
+      <option value="auto">Follow the sun (automatic)</option>
+      <option value="predawn">The Watch — before light</option>
+      <option value="morning">First Light — morning</option>
+      <option value="day">Full Day</option>
+      <option value="evening">Evening</option>
+      <option value="night">The Long Night</option>
+    </select>
+  </div>
+
+  <div class="foot">
+    <a id="footPhase">read another hour</a> · <a id="footRemind">remind me</a> · <a id="footBackup">backup</a> · <a id="footLock">lock</a><span id="footInstallWrap"> · <a id="footInstall">add to home screen</a></span>
+    <span class="foot-note">Carries the heart of old words — love your neighbor, guard your promises, a clean heart, the gap between the urge and the act — for any man, any morning.</span>
+  </div>
+</div>
+
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <button class="x" id="modalX">×</button>
+
+    <div class="mpanel" id="mpHelpMenu">
+      <h3>Name the pull</h3>
+      <div class="msub">You don't have to fight it alone or in the dark.</div>
+      <div id="helpMenuHint"></div>
+      <div class="help-themes" id="helpThemes"></div>
+    </div>
+
+    <div class="mpanel" id="mpHelpWord">
+      <h3 id="modalTitle"></h3>
+      <div class="word" id="modalWord"></div>
+      <div class="help-reach" id="helpReach"></div>
+      <div class="breath" id="breath">
+        <div class="orb" id="orb"></div>
+        <div class="cue" id="breathCue">Ready when you are</div>
+        <div class="count" id="breathCount"></div>
+      </div>
+      <button class="btn" id="modalAnother" style="margin-bottom:10px">Another word</button>
+      <button class="btn ghost" id="breathToggle" style="margin-bottom:10px">Breathe with me — 1 minute</button>
+      <button class="btn ghost" id="helpBack">← other pulls</button>
+    </div>
+
+    <div class="mpanel" id="mpAnchor">
+      <h3>Today's anchor</h3>
+      <div class="msub">One promise you keep, all the way through the day.</div>
+      <div id="anchorView"></div>
+    </div>
+
+    <div class="mpanel" id="mpEvening">
+      <h3>Lay the day down</h3>
+      <div class="word small" id="reflectQ">How did today go — the man you meant to be?</div>
+      <div class="reflect-row" id="reflectRow">
+        <button data-v="held">I held the line</button>
+        <button data-v="mixed">Mixed. Still here.</button>
+        <button data-v="slipped">I slipped</button>
+      </div>
+      <div class="streak" id="streak"></div>
+      <div id="eveningRemindHint"></div>
+      <hr class="mdiv" />
+      <div class="word small" id="eveningQuiet"></div>
+      <button class="refresh" id="eveningRefresh">↺ another</button>
+      <div class="eve-anchor" id="eveningAnchorNote"></div>
+      <div class="eve-tabs">
+        <button class="eve-tab" id="tabPrayer" aria-pressed="false">A prayer</button>
+        <button class="eve-tab" id="tabQuiet" aria-pressed="false">A quiet moment</button>
+      </div>
+      <div class="eve-pane" id="prayerPane">
+        <div class="prayer-body" id="prayerText"></div>
+        <span class="amen">— Amen —</span>
+        <button class="refresh" id="prayerRefresh">↺ another</button>
+      </div>
+      <div class="eve-pane" id="quietPane">
+        <div class="word small" id="quietText"></div>
+        <div class="breath on" style="margin-top:16px">
+          <div class="orb" id="eveOrb"></div>
+          <div class="cue" id="eveCue">Begin when you're ready</div>
+          <div class="count" id="eveCount"></div>
+        </div>
+        <button class="btn ghost" id="eveBreathBtn">Begin — one slow minute</button>
+      </div>
+    </div>
+
+    <div class="mpanel" id="mpRemind">
+      <h3>Nudge me through the day</h3>
+      <div class="msub">A few gentle reminders, straight from your phone's own calendar. Nothing to sign up for, no notifications to grant — and nothing leaves your device.</div>
+      <div id="remindRows"></div>
+      <button class="btn" id="remindGo" style="margin-top:18px">Add to my calendar</button>
+      <div class="saved" id="remindMsg"></div>
+      <button class="mlink" id="remindDownload">or download the file instead</button>
+      <div class="msub" style="margin-top:16px;font-size:12px">On the next screen, choose <b>Add All</b>. To change the times later, come back here and add again.</div>
+    </div>
+
+    <div class="mpanel" id="mpMine">
+      <h3>Your own words</h3>
+      <div class="msub">Add a line of your own — a verse, a reminder, something someone once told you. It gets mixed in with the rest, so First Light starts speaking in your voice too. Kept on this phone only.</div>
+      <div class="bk-field">
+        <label>The line</label>
+        <textarea id="mineText" placeholder="e.g. He restores my soul. / My kids don't need me perfect. / Call, don't scroll."></textarea>
+      </div>
+      <div class="bk-field">
+        <label>When should it come up?</label>
+        <div class="mine-when" id="mineWhen">
+          <button type="button" data-w="first">First thing</button>
+          <button type="button" data-w="any" aria-pressed="true">Any time</button>
+          <button type="button" data-w="hard">The hard hours</button>
+        </div>
+      </div>
+      <button class="btn" id="mineAdd" style="margin-top:8px">Add it</button>
+      <div class="saved" id="mineMsg"></div>
+      <div id="mineList" style="margin-top:14px"></div>
+    </div>
+
+    <div class="mpanel" id="mpBackup">
+      <h3>Someone in your corner</h3>
+      <div class="msub">Set one person you can reach in a hard moment — a friend, a brother, someone who's got you. First Light writes the text; you decide whether to send it. It's kept on this phone only.</div>
+      <div id="backupForm"></div>
+    </div>
+
+    <div class="mpanel" id="mpLock">
+      <h3>Lock First Light</h3>
+      <div class="msub">This app holds private things. Lock it so it opens only for you — even when the phone is already unlocked and in someone else's hands.</div>
+      <div class="lock-setup" id="lockSetup"></div>
+    </div>
+
+    <div class="mpanel" id="mpWelcome">
+      <h3>Before the hard hours come</h3>
+      <div class="msub">A few things worth setting while it's quiet. None of it is required, and you can do any of it later.</div>
+      <div id="welcomeSteps"></div>
+      <button class="btn ghost" id="welcomeDone" style="margin-top:16px">I'm good for now</button>
+    </div>
+
+    <div class="mpanel" id="mpInstall">
+      <h3>Keep it one tap away</h3>
+      <div class="word small" id="appMsg">Add First Light to your home screen — it opens full‑screen like an app, no browser bar, straight to the word for right now.</div>
+      <button class="btn" id="installBtn" style="margin-top:14px">Add to home screen</button>
+      <button class="btn ghost" id="fsBtn" style="margin-top:10px">Open full‑screen now</button>
+      <div class="add-steps" id="addSteps"><ol id="addStepsList"></ol></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="firstrun" id="firstRun" hidden>
+  <div class="fr-inner">
+    <div class="fr-mark">◗</div>
+    <div class="fr-eyebrow">The first day</div>
+    <div class="fr-title">Who are you today?</div>
+    <p class="fr-sub">First Light speaks differently to a father than to a son. Choose the one that fits &mdash; you can switch anytime, with a tap on the card.</p>
+    <div class="fr-roles" id="frRoles"></div>
+    <button class="fr-skip" id="frSkip">show me first &rarr;</button>
+  </div>
+</div>
+
+<div class="lock-screen" id="lockScreen" hidden>
+  <div class="lock-inner">
+    <div class="lock-mark">◗</div>
+    <div class="lock-title" id="lockTitle">First Light</div>
+    <div class="pin-dots" id="pinDots"><i></i><i></i><i></i><i></i></div>
+    <div class="pin-pad" id="pinPad"></div>
+    <button class="btn ghost" id="lockBioBtn" hidden>Unlock with Face ID / fingerprint</button>
+    <div class="lock-err" id="lockErr"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var LS = {
+    role:"fl_role", anchorText:"fl_anchor_text", anchorDate:"fl_anchor_date",
+    prevAnchor:"fl_prev_anchor", visits:"fl_visits", total:"fl_total", reflect:"fl_reflect_", remind:"fl_remind",
+    lock:"fl_lock", discreet:"fl_discreet", backup:"fl_backup",
+    seen:"fl_seen", mine:"fl_mine", todayWord:"fl_today_word",
+    onboarded:"fl_onboarded", firstSeen:"fl_first_seen", hints:"fl_hints"
+  };
+  function get(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function set(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  function today(){return new Date().toISOString().slice(0,10)}
+
+  /* ---------- phase ---------- */
+  var THEMES = {
+    predawn:{top:"#05070f",bot:"#0e1330",name:"The Watch",note:"It's still dark. You're up before the day can push you around."},
+    morning:{top:"#20264d",bot:"#c98b4b",name:"First Light",note:"The morning is for remembering who you decided to be."},
+    day:{top:"#2a3566",bot:"#5b74b0",name:"Full Day",note:"The day is loud now. Keep one promise. Just one."},
+    evening:{top:"#3a2f5c",bot:"#7a4a5e",name:"Evening",note:"The work winds down. Come home all the way — not just your body."},
+    night:{top:"#05070f",bot:"#141a3a",name:"The Long Night",note:"The hard hours. Nothing important needs deciding now."}
+  };
+  function autoPhase(){
+    var h=new Date().getHours();
+    if(h>=4&&h<6)return"predawn";
+    if(h>=6&&h<11)return"morning";
+    if(h>=11&&h<17)return"day";
+    if(h>=17&&h<20)return"evening";
+    return"night";
+  }
+  function currentPhase(){
+    var s=get("fl_phase_override");
+    if(s&&s!=="auto"&&THEMES[s])return s;
+    return autoPhase();
+  }
+
+  /* ---------- content ---------- */
+  var ROLES=["Father","Husband","Boyfriend","Friend","Business Partner","Son"];
+
+  var MORNING={
+    "Father":[
+      "Your children are learning what a man is by watching you today. Not the perfect version — the honest one who keeps showing up. Be that.",
+      "Before the house wakes, decide the father they'll remember: patient, present, quick to listen. Choose it before the day chooses for you.",
+      "You will not be a flawless father. You can be a faithful one. They need your steadiness more than your success.",
+      "Somewhere in your child is a picture of love with your face on it. Make it a gentle one today.",
+      "The way you handle being wrong in front of them teaches more than any lecture. Apologize today when you need to; let them watch a man do it well.",
+      "They won't remember most of what you say. They'll remember whether you were glad to see them walk into the room. Be glad today.",
+      "Discipline without warmth breeds fear. Warmth without discipline breeds chaos. They need both from you — lead with the warmth this morning.",
+      "You are the first picture of a protector they'll ever have. Be strong in a way that makes them feel safer, never smaller.",
+      "Put the phone down when they're talking. Five minutes of your full eyes beats an hour of your half attention.",
+      "One day they'll be a grown man's or woman's whole idea of 'father.' You're writing that definition today, in how you speak at breakfast."
+    ],
+    "Husband":[
+      "The woman you married is not a task on your list. She's the person you promised your life to. Reach for her first — before the phone, before the work.",
+      "Faithfulness is built in small, boring, daily choices nobody claps for. Make one of them this morning.",
+      "Speak about her today the way you'd want a stranger to speak about your daughter.",
+      "Love is patient, it is kind, it keeps no record of wrongs. Carry one line of that into the kitchen with you.",
+      "Notice one thing she carries that you've stopped seeing — the laundry, the calendar, the worry — and take it off her hands today without being asked.",
+      "Marriage isn't one big vow. It's ten thousand small ones. Renew one this morning before you leave the house.",
+      "She married a partner — not a project, not a roommate. Turn toward her today.",
+      "The affair you never have starts with the boundary you set this morning. Decide now who gets your attention and who doesn't.",
+      "Be a safe place to land. When she's wrong, be kind. When she's tired, be steady. When she's scared, be near.",
+      "Praise her out loud, to other people, when she can't hear it. That's the habit that keeps a marriage warm."
+    ],
+    "Boyfriend":[
+      "How you treat her now is a promise about the man you'll be later. Keep it clean.",
+      "Decide this morning that she is safe with you — her heart, her name, her trust — whether or not it's convenient.",
+      "Be the man she never has to worry about.",
+      "Attention is easy. Respect is the thing. Give her the second one today.",
+      "Curiosity is love you can practice. Ask her a real question today and actually wait for the answer.",
+      "Your friends' idea of a woman and the real one in front of you are not the same. Protect her from the locker room — including the one in your own head.",
+      "Pressure is not passion. If she'd have to talk herself into it, it's a no. Be the man who makes 'no' cost her nothing.",
+      "Build the habit now of telling her the small truth, so the big ones are easy later.",
+      "Treat her the way you'd want some man treating your sister across town tonight.",
+      "You're auditioning for husband whether you meant to or not. Be someone she'd be safe saying yes to."
+    ],
+    "Friend":[
+      "A friend loves at all times. Someone in your circle is quietly struggling — send the text before you talk yourself out of it.",
+      "Be the friend who shows up, tells the truth kindly, and keeps what's told in confidence.",
+      "Iron sharpens iron. Call the friend who makes you a better man today.",
+      "You don't have to fix anyone. Just don't let them carry it alone.",
+      "The friend who tells you what you want to hear is company. The friend who tells you the truth is rare. Be the rare one today — gently.",
+      "Check on the one who's been too quiet, not just the one who's been too loud.",
+      "Loyalty is talking about your friends the same way whether they're in the room or not. Hold that line today.",
+      "You become the men closest to you. Spend today's few minutes on the ones pulling you up.",
+      "Being a man doesn't mean carrying it alone. Let one friend actually know how you're doing today.",
+      "Show up to the thing that matters to him even when it doesn't matter to you. That's the whole job."
+    ],
+    "Business Partner":[
+      "Your word is the whole business. Everything else is paperwork. Keep it today.",
+      "Do right by the people counting on you even when the ledger says you could get away with less.",
+      "Let your yes be yes. Put no fine print in your character.",
+      "Build it so that if everything you did came to light, you'd still be able to look them in the eye.",
+      "The shortcut that costs someone else always finds its way back to you. Take the long way today.",
+      "Pay people what you said, when you said it. Your reputation is built in the boring act of keeping terms.",
+      "Disagree hard in private, present one front in public. That's respect, and it's what holds a partnership together.",
+      "Money will test what your handshake is worth. Decide this morning that it's worth everything.",
+      "Treat the junior person and the big client with the same honesty. Someone is always watching which man you are.",
+      "A partner is someone whose interests you guard when they're not in the room. Guard them today."
+    ],
+    "Son":[
+      "Honor the people who raised you today — a call, a thank-you, a little patience with them.",
+      "You are becoming someone. Aim it on purpose this morning.",
+      "The strength you're looking for isn't loud. It's the quiet kind that keeps its promises.",
+      "Whatever was handed to you, you get to decide what you hand on. Start today.",
+      "Your parents got some of it wrong. You can honor them and still choose differently — both, at once, today.",
+      "Call before you need something. A five-minute check-in now is worth more than a long apology later.",
+      "The man you're becoming is being built out of ordinary mornings like this one. Build on purpose.",
+      "Patience with the people who raised you is a strength, not a weakness. Practice it today.",
+      "You don't have to have it figured out. You just have to keep your word and keep showing up.",
+      "One day the roles reverse and you carry them. Start being that dependable now, in small ways."
+    ]
+  };
+
+  var PHASE_GENERAL={
+    predawn:[
+      "It's still dark. Good — decide now who you're going to be, while it's quiet and the choice is still yours.",
+      "The day hasn't touched you yet. Set your direction before the noise sets it for you.",
+      "First one awake gets to choose the tone. Choose steady.",
+      "Whatever's still hanging over from yesterday, you get to decide right now whether it comes with you.",
+      "You woke before you had to. That's already a small act of taking your life back."
+    ],
+    day:[
+      "The day is loud now. Keep one promise you made this morning. One kept promise changes the whole day.",
+      "You will be tired and a little provoked by 3pm. Decide right now that tired-you still keeps his word.",
+      "Do the next right thing in front of you. That's the whole method.",
+      "You are allowed to start the day over at noon. Take the reset.",
+      "The version of you that people count on is the one who does the boring right thing when it's inconvenient."
+    ],
+    evening:[
+      "The work is winding down. Come home all the way — put the day down at the door.",
+      "The people at home don't need the leftover version of you. Leave the frustration in the car.",
+      "Evening is for gentleness. Lower your voice, slow your hands, be kind to the ones nearest you.",
+      "You did some things well today and some badly. Both are allowed to be true. Put both down.",
+      "Whoever's under your roof gets the you that's left. Make sure there's some left."
+    ],
+    night:[
+      "The hard hours. Nothing important needs deciding now. Keep your hands busy with something dull and let tomorrow be new.",
+      "Being tired, alone, and awake makes everything feel bigger than it is. Don't trust the size of anything at this hour.",
+      "You don't have to win the night. You just have to get to sleep. Start there.",
+      "Nothing you decide after midnight will look the same in the morning. Decide nothing.",
+      "You have gotten through every hard night so far. This is just the next one, and it ends."
+    ]
+  };
+
+  var PHASE_BY_ROLE={
+    predawn:{
+      "Father":[
+        "The house is asleep and still yours to set the tone for. Decide the father who walks out of that bedroom in an hour.",
+        "Before anyone needs anything from you, take one quiet minute for yourself. You pour out all day — fill something first.",
+        "The first face they see today will set their weather. Meet them with warmth, whatever kind of night you had.",
+        "You can't give them a calm home if you start the day rushed and clenched. Take the slow minute first."
+      ],
+      "Husband":[
+        "She's still asleep. Look at her for a second before the day starts, and remember what you're actually working for.",
+        "Set one intention toward her before the day pulls the two of you in different directions.",
+        "Before the emails, one thought that's only about her. She was the plan before any of this was.",
+        "The marriage is built in the unremarkable mornings. This is one of them. Show up gently."
+      ],
+      "Boyfriend":[
+        "Quiet hour, clear head — this is when you decide the man you're being for her, before the day tests it.",
+        "No one's watching yet. Practice being the same man alone that you are when she's in the room.",
+        "You're deciding, in the quiet, the kind of man she's dating — before she's even awake to see it.",
+        "Integrity is just doing the same thing when nobody's watching. Right now, nobody's watching."
+      ],
+      "Friend":[
+        "Think of one friend before the day starts. A message sent at dawn tells him he was your first thought, not your last.",
+        "Use the quiet to remember who's been carrying something heavy. Reach out before the day fills up.",
+        "Send the good-morning text you'd want to get. Someone in your circle is starting today heavy.",
+        "You have five quiet minutes. Spend one of them being glad for a friend, out loud, to him."
+      ],
+      "Business Partner":[
+        "The day's demands haven't started. Decide now the line you won't cross for money today, while it's easy to see.",
+        "First one up sets the standard. Bring the same honesty to this quiet hour that you'd bring to the table.",
+        "Decide your non-negotiable for today now, while it's cheap. It gets expensive by 3pm.",
+        "The people who trust you are still asleep. Be worth that trust before they wake up."
+      ],
+      "Son":[
+        "Before the day, one thought toward the people who raised you. Gratitude comes easier at dawn than at dinner.",
+        "The man you're becoming gets shaped in minutes like these. Aim him on purpose.",
+        "One grateful thought toward home before the day buries it. They did more for you than you saw.",
+        "You're becoming the man they'll lean on later. Start rehearsing him in the quiet."
+      ]
+    },
+    day:{
+      "Father":[
+        "Somewhere today your patience will run thin. Decide now that thin-patience-you still gets down to their eye level.",
+        "Keep the one promise you made this morning about them. They keep score even when they don't say so.",
+        "When your patience snaps today — and it will — the repair matters more than the snap. Circle back and make it right.",
+        "They're watching how you handle a bad afternoon. Show them a man who stays kind under pressure."
+      ],
+      "Husband":[
+        "Send her one text that isn't logistics — not a task, just that you thought of her.",
+        "Whatever the day throws, don't let her get the worn-out leftovers of you tonight. Save something back.",
+        "Do one invisible thing for her today that she'll only notice is done, not that you did it.",
+        "Whatever went wrong at work, she is not the place to put it down. Find another place."
+      ],
+      "Boyfriend":[
+        "The day is when the small truths matter. Answer her honestly even when a half-answer would be easier.",
+        "Be the man she doesn't have to check up on — all day, not only when it's convenient.",
+        "A hard conversation today is cheaper than a resentment next month. Have the small one now.",
+        "Text her something true and kind in the middle of the day. It costs nothing and it lands."
+      ],
+      "Friend":[
+        "Two minutes to check on a friend isn't a distraction from your day. Some days it's the point of it.",
+        "If a friend crosses your mind today, that's the reminder. Act on it before it passes.",
+        "The friend you keep meaning to call — call him on your drive. Ten minutes, no agenda.",
+        "Being a man doesn't mean carrying it alone. Tell one friend the real answer to 'how are you' today."
+      ],
+      "Business Partner":[
+        "The day will offer you a shortcut that costs someone else. You already know your answer. Hold it.",
+        "Do what you said you'd do today, on time — even the small thing. That's the whole reputation.",
+        "Someone will offer you a way to win that quietly costs a third party. Decline it before you're tempted to weigh it.",
+        "Return the message you're avoiding. Your word is worth exactly as much as your follow-through."
+      ],
+      "Son":[
+        "A two-line message to a parent in the middle of a busy day beats the long call you keep postponing.",
+        "Keep your word today in the small stuff. That's how the man they hoped for gets built.",
+        "Send them a photo of something ordinary from your day. It says 'I thought of you' better than a long call.",
+        "Patience with a parent who repeats themselves is a small, unglamorous strength. Practice it today."
+      ]
+    },
+    evening:{
+      "Father":[
+        "Walk in the door as the father, not the worker. The frustration stays in the car. They get the real you.",
+        "The last hour before their bedtime is worth more than any hour you worked today. Be all the way there for it.",
+        "Get on the floor for ten minutes. That's the part of the day they'll actually remember.",
+        "You're tired and they still need you. Give them the last real hour, then rest."
+      ],
+      "Husband":[
+        "Come home to her, not just to the house. Put the phone down for the first ten minutes and actually arrive.",
+        "Ask how her day was and stay for the whole answer. That's most of what she needs from you tonight.",
+        "Greet her before you greet the fridge or the phone. Thirty seconds of full attention at the door.",
+        "Ask her a question tonight that isn't about logistics. Then listen longer than feels natural."
+      ],
+      "Boyfriend":[
+        "Evening is for attention, not just presence. Be with her — not next to her while you scroll.",
+        "End the day with one honest, kind thing said out loud. Don't let it go unsaid because you're tired.",
+        "Put the phone in another room for the evening. Presence is the whole gift.",
+        "Say the appreciative thing out loud before bed. Unsaid, it does her no good."
+      ],
+      "Friend":[
+        "The wind-down hour is a good time to call the friend you keep meaning to call. Do it tonight.",
+        "Let one friend know how you're actually doing before you go quiet for the night.",
+        "Before you go quiet for the night, send one friend a real check-in. Not a meme — a sentence.",
+        "The evening's a good time to forgive someone in your head so you're not carrying it to bed."
+      ],
+      "Business Partner":[
+        "Leave the day's frustration at the office. The people at home aren't your co-workers and shouldn't pay for the meeting that went bad.",
+        "Close the laptop. The work will hold. The evening won't come back.",
+        "The deal will still be there tomorrow. The people at your table tonight will not wait forever.",
+        "Shut the laptop where they can see you shut it. It tells them they come first."
+      ],
+      "Son":[
+        "Call them in the evening while you're thinking of it, not 'soon.' Soon has a way of becoming too late.",
+        "Put the day down and be patient with the people at home. It costs you nothing you'll miss.",
+        "Call them tonight, even for two minutes. 'Soon' is how years go by.",
+        "Bring home the patience you'd show a client. The people who raised you have earned at least that."
+      ]
+    },
+    night:{
+      "Father":[
+        "You have to be a father tomorrow with a full tank. Nothing you do at 1am fills it. Close the phone and sleep.",
+        "If one of your kids saw how you spend this hour, would it make them proud or worried? Answer with what you do next.",
+        "Tomorrow's version of you needs sleep more than tonight's version needs anything on that screen.",
+        "Would the father you want to be be proud of the next twenty minutes? Then spend them that way."
+      ],
+      "Husband":[
+        "Late, restless, far from her side of the bed? Distance is a feeling, not a fact. You're still her husband. Go lie down.",
+        "Whatever's pulling at you tonight, its honest version is a conversation with her tomorrow — not a secret now.",
+        "The distance you feel from her right now is the hour talking, not the marriage. Go get in the bed.",
+        "Anything worth doing about what you're feeling can be done tomorrow, in daylight, with her."
+      ],
+      "Boyfriend":[
+        "The nights you run yourself are the proof of the man you'll be. Win this one quietly and go to sleep.",
+        "Don't negotiate with yourself at your weakest hour. Lie down. Let tomorrow's clear head decide.",
+        "The man you're going to ask her to trust is built on nights like this one. Win it quietly.",
+        "Don't make deals with yourself at 2am. You always lose them. Just lie down."
+      ],
+      "Friend":[
+        "One line to a friend — 'rough night, heading to bed' — breaks the spell of being alone with it. Send it.",
+        "You don't have to win the night alone. You just have to get to morning. A friend can help you get there.",
+        "'Rough night, going to sleep' — send that to one person and half the weight lifts. You don't owe an explanation.",
+        "You don't have to beat the night. You just have to reach the morning. Someone can help you get there."
+      ],
+      "Business Partner":[
+        "You keep commitments to people who are only paying you. Keep this one to yourself, at the hour it's hardest.",
+        "The man who runs his nights runs his mornings. Nothing important is decided now. Sleep.",
+        "You keep your word to strangers. Keep it to yourself now, in the hour it costs the most.",
+        "Nothing decided after midnight survives the morning. Decide nothing. Sleep."
+      ],
+      "Son":[
+        "Whatever makes the late hours heavy is worth bringing to someone in the daylight. Tonight, just rest.",
+        "You're still being built. Don't let a tired, lonely hour get a vote. Lie down.",
+        "Whatever's heavy tonight, it's a daylight conversation with someone who loves you — not a 2am fight alone.",
+        "You are still being made. Don't let the tired, lonely hour get the deciding vote."
+      ]
+    }
+  };
+
+  var HELP={
+    faithful:{
+      title:"Staying true to the one you promised",
+      byRole:{
+        "Father":[
+          "Your kids won't know the details, but they'll feel the temperature of the house drop, and it stays dropped for years. Protect the warmth they're growing up in.",
+          "One day your son or daughter picks a partner based partly on what they watched you do. Show them a man who stayed."
+        ],
+        "Husband":[
+          "You stood in front of people and gave your word. It's still good tonight unless you break it — and you don't break your word over a feeling.",
+          "The closeness you're missing gets rebuilt by turning toward her, not away. Have the hard conversation instead of the easy betrayal."
+        ],
+        "Boyfriend":[
+          "You're not married yet, so this is exactly when you find out what your loyalty is worth. Decide it's worth something.",
+          "If you can't be faithful now, when it's easy, don't propose later and call it love. Fix this first."
+        ],
+        "Friend":[
+          "If a friend is egging this on, he isn't looking out for you. Call the one who'd tell you to go home.",
+          "Be the man your friends could point their sons toward. That starts with what you do when no one's watching tonight."
+        ],
+        "Business Partner":[
+          "You keep your word in a contract with a stranger. Your marriage got a bigger promise than any deal you've signed. Honor the biggest one.",
+          "A man who cuts corners at home starts cutting them everywhere. Integrity isn't a setting you switch off in one room."
+        ],
+        "Son":[
+          "If you watched a parent do this, you know the wreckage it leaves. You're standing where they stood. Walk the other way and let it end with you.",
+          "The man your parents hoped you'd become is deciding something right now. Let him choose faithfulness."
+        ]
+      },
+      lines:[
+        "The thought is not the sin. What you do next is the choice. Right now you're still standing on solid ground — stay there.",
+        "Every affair started as a conversation someone decided not to end. End it. Be a little rude if you have to.",
+        "You already have what you keep looking for. It's at home, and it grows every time you choose it again.",
+        "Picture her face — the one you promised. Now picture telling her. Let that be enough to close the tab, leave the room, drive home.",
+        "It's late and you feel far from home. Distance is a feeling, not a fact. You are still her man. Sleep on your own side of that line.",
+        "Attraction to someone new isn't a message from the universe. It's just weather. Let it pass over you and keep walking.",
+        "The version of this that ends well is the one where you tell on yourself early — to her, to a friend, to someone. Secrets are where it grows.",
+        "You are not missing out. The grass looks greener because you're not the one who has to mow it. Go water your own yard.",
+        "Block the number. Mute the account. Change your route. Make the right thing the easy thing while your head is still clear.",
+        "Loyalty isn't a feeling that visits you. It's a decision you make this morning, and again tonight, until it's just who you are.",
+        "If you'd be ashamed for her to read the messages, you already have your answer. Delete the thread and go be present where you actually live.",
+        "One honest conversation with your partner about what feels missing will do more than a hundred secret ones with someone else.",
+        "The excitement you feel is mostly newness and secrecy, and both burn off fast. What you have at home is the thing that lasts. Don't trade it for a spark."
+      ]
+    },
+    urge:{
+      title:"The late-night pull",
+      byRole:{
+        "Father":[
+          "You'd tell your kid to put the screen down and go to bed. Take your own advice tonight — same voice, same love.",
+          "Tomorrow you have to be a father with patience. You don't build that at 2am feeding this. Sleep."
+        ],
+        "Husband":[
+          "This pull is often just loneliness in a disguise. The cure is in the next room. Go lie down next to her instead.",
+          "What you're reaching for in secret, you could build with her in the open. Close the phone. It's a conversation, not a habit."
+        ],
+        "Boyfriend":[
+          "The self-control you practice alone tonight is the same muscle you'll need to stay faithful later. Train it now.",
+          "You get to decide what kind of man you bring into the relationship. Bring one who runs his own nights."
+        ],
+        "Friend":[
+          "Text a friend one line — 'rough night.' You don't have to say more. Just don't sit alone with it in the dark.",
+          "You'd pick up if a friend called you at this hour. Let one be that for you. Reach out before you reach for the phone."
+        ],
+        "Business Partner":[
+          "You show up disciplined for people who are only paying you. Show up disciplined for yourself, at the hour it actually counts.",
+          "Discipline is one thing, not many. The man who runs his 2am runs his 9am too. Start with tonight."
+        ],
+        "Son":[
+          "Whatever you're carrying that makes the nights hard is worth looking at in daylight, with someone. Tonight, just get to sleep.",
+          "You're still becoming who you'll be. Don't let a tired hour cast the vote. Lie down and let tomorrow decide."
+        ]
+      },
+      lines:[
+        "The pull feels huge because it's late and you're tired and alone with it. It is smaller than it feels. Wait fifteen minutes and watch it shrink.",
+        "You are not an animal on a string. There is a gap between the urge and the hand, and you live in that gap. Breathe into it.",
+        "Put the phone in another room. Drink a glass of water. Lie down. You've beaten this before with three boring things instead of one loud one.",
+        "A slip is not a collapse. If it already happened — wash your face, forgive yourself, and don't let one moment write the whole night. Tomorrow is clean.",
+        "Self-control is a muscle and it's the middle of the night — of course it feels weak. Don't negotiate with yourself at your weakest hour. Just sleep.",
+        "Future-you, the one who wakes up clear-headed and proud, is asking you for this one. Give it to him.",
+        "Name it out loud: 'I'm tired, I'm lonely, I'm bored, and it's late.' Half its power is that it stays unnamed.",
+        "This is a craving, and cravings crest and fall like a wave. You don't have to make it stop — you just have to not act while it's high. Ride it out.",
+        "Stand up. Turn on the light. Change rooms. A craving is anchored to a place and a posture; break the setup and it loosens.",
+        "You have never once been glad about it afterward. Let past-you, who remembers exactly how this feels at 6am, cast a vote.",
+        "If it already happened: nothing is ruined. Glass of water, get in bed, let the streak start again tomorrow. Shame is what turns one night into a habit.",
+        "Text a friend — even just 'rough night, going to sleep.' You don't have to explain. Being a little less alone changes the math.",
+        "Your worth doesn't move based on tonight. Win it or lose it, you get up tomorrow and you're still worth the effort."
+      ]
+    },
+    heart:{
+      title:"When your heart has gone hard toward people",
+      byRole:{
+        "Father":[
+          "Your kids catch how you talk about the slow driver, the rude cashier, the guy at work. Soften it — they're learning their whole posture toward people from you.",
+          "The tenderness you feel for your own children is the right amount for everyone's children. Widen it by one person today."
+        ],
+        "Husband":[
+          "If your heart's gone hard out there, she feels the edge of it at home. Thaw it before you walk through the door.",
+          "Be as gentle with the stranger as you want to be remembered for being with her. It's the same muscle."
+        ],
+        "Boyfriend":[
+          "How you treat waiters, drivers, and strangers is who you actually are — she's watching that more than the flowers. Be kind when there's nothing in it for you.",
+          "The contempt you practice on strangers doesn't stay outside the relationship. Drop it now."
+        ],
+        "Friend":[
+          "You were a stranger to every friend you have until one of them was warm to you first. Go be that for someone today.",
+          "A hard man collects grudges and loses friends slowly. Let one thing go today, before it sets."
+        ],
+        "Business Partner":[
+          "Treat the assistant, the vendor, and the junior guy with the same respect as the person who can help you. Character isn't situational.",
+          "The person who can do nothing for you is the real test of the man. Pass it today."
+        ],
+        "Son":[
+          "Start the softening at home — patience with the people who raised you, even when they repeat themselves. Then carry it out the door.",
+          "Every stranger is somebody's kid. You know exactly what it is to be somebody's kid. Let that land today."
+        ]
+      },
+      lines:[
+        "The man who cut you off in traffic is somebody's son. The person who was short with you is carrying something you can't see. Soften — it costs you nothing.",
+        "You were a stranger to everyone who now loves you. Someone chose to be warm to you first. Pass it on today.",
+        "Look at the next person you pass like they could have been your brother. In another life, they were.",
+        "A hard heart is heavy to carry. Set it down. Let one small kindness back in today.",
+        "The people you find easiest to ignore are the ones the whole thing was really about. Start with one of them.",
+        "You don't have to feel love first. Do the kind thing, and the feeling often follows it home.",
+        "Everyone you'll meet today is fighting something you can't see. Assume the best about the person in front of you — you'll be right more often than not.",
+        "The cashier, the driver, the guy who was rude — pick one and be deliberately kind to them today. Kindness thaws the one who gives it.",
+        "You didn't earn the people who love you. Someone was patient with you before you deserved it. Be that someone for a stranger today.",
+        "Contempt is comfortable and it's poison. Notice who you've written off, and give them one more chance in your mind this morning.",
+        "Picture the person who annoys you most as somebody's kid, somebody's dad, somebody's whole world. It's true, and it changes your face.",
+        "Start small: eye contact, a thank-you you mean, letting the car merge. A soft heart is built from those, not from grand gestures.",
+        "The stranger you helped could have been your brother in another life. Treat him like he still is."
+      ]
+    },
+    worth:{
+      title:"When you're not sure you're worth the effort",
+      byRole:{
+        "Father":[
+          "Your kids don't need you to have earned it. They need you here, trying, tomorrow. That's the whole assignment, and you can do it.",
+          "The best thing you can give them isn't a perfect father. It's one who kept going after a bad stretch. Show them that this week."
+        ],
+        "Husband":[
+          "She didn't marry a highlight reel. She married a man who keeps showing up. You can still be that, starting tonight.",
+          "You becoming steadier is the best thing in the house. Stay in the work for her until you can do it for you."
+        ],
+        "Boyfriend":[
+          "The man worth committing to isn't the one who never struggled. He's the one doing the work now, before he's asked to. That's you tonight.",
+          "You don't have to feel ready or worthy. Just keep your word this week. That's how the man gets built."
+        ],
+        "Friend":[
+          "One of your friends would be genuinely worse off without you and doesn't know how to say it. Stay in it for him.",
+          "You'd never let a friend talk about himself the way you're talking about yourself. Extend that to you."
+        ],
+        "Business Partner":[
+          "You don't write off an investment over one bad quarter. Don't write off yourself over a bad stretch. The trend is what matters.",
+          "You've kept your word to other people through worse than this. Keep it to yourself now — you're owed the same honesty."
+        ],
+        "Son":[
+          "The fact that it bothers you means the better man is still in there. Someone planted him. He's not gone.",
+          "You're not the sum of your worst month. You're who you decide to be starting this morning. Decide, and get up."
+        ]
+      },
+      lines:[
+        "You are not the worst thing you've done. You're the man who got up today and looked for help. That counts for more than you think.",
+        "Change doesn't feel like fireworks. It feels like doing the right small thing again on a normal Tuesday. You're doing it right now.",
+        "Someone will be better off because you didn't quit on yourself this year. Stay in it for them, until you can do it for you.",
+        "The fact that your conscience still bothers you is good news. It means the better man is still in there, still awake.",
+        "You are being remade in the small hours and the boring choices. You won't see it day to day. Keep going anyway.",
+        "Grace means you get to start again from here — not from your best day, not from your worst. From here.",
+        "Feeling like a fraud for trying to be better just means you remember who you were. Keep going — that feeling fades, the change stays.",
+        "You don't need to feel worthy to do the next right thing. Do it first; the feeling catches up later.",
+        "Measure yourself against who you were last month, not against some man who never struggled. By that measure, you're moving.",
+        "The men you respect most all have a chapter they're not proud of. It's not the fall that defined them — it's that they got up.",
+        "If a friend said to you what you're saying to yourself right now, you'd never accept it. Talk to yourself like someone you're responsible for.",
+        "You showing up here — tired, unsure — is not nothing. It's the whole seed. Water it and go.",
+        "The excitement you're looking for is real, and it comes later: it's the morning you realize you've quietly become the man you were trying to be."
+      ]
+    }
+  };
+
+  var QUIET_REFLECT=[
+    "The day is finished. Whatever you didn't get to will still be there tomorrow, and tomorrow will be enough for it. Let your shoulders down.",
+    "Name one thing that went right today, however small. Say it to yourself. Then let the rest go.",
+    "You were not the perfect version of yourself today. You were a real man trying. That's the one who gets to rest.",
+    "Forgive someone in your mind before you sleep — including yourself. Don't carry it into the dark.",
+    "The light was divided from the darkness, and it was called good. Your day held both. Both were allowed. Rest now.",
+    "Put down what you can't fix tonight. That isn't giving up on it. It's trusting that morning is coming.",
+    "Think of the people asleep under your roof, or the ones you'd protect with your life. You did today for them. That's enough for one day."
+  ];
+  var PRAYERS=[
+    "Thank you for today — the parts I handled well and the parts I didn't. Forgive me where I fell short. Guard the people I love while they sleep. Keep me from what pulls at me in the night, and let me wake ready to try again.",
+    "Quiet the noise in me tonight. Hold what I can't fix. Make me gentle with the people under this roof. Lead me away from what I'd regret. Let me rest.",
+    "I give you the day. The good I did, keep. The wrong I did, forgive. The worry I'm carrying, take it for the night.",
+    "For the man I was short with, the promise I bent, the thing I looked at that I shouldn't have — I'm sorry. Start me clean tomorrow.",
+    "Watch over the ones I would protect with my life. Steady me in the hours when I am weakest. Thank you for not being finished with me yet.",
+    "Make me the kind of man my family can lean their whole weight on. Not perfect. Just steady, and here, and honest. Tomorrow, again."
+  ];
+  var PRAYERS_BY_ROLE={
+    "Father":[
+      "Make me the father they need — patient when I'm tired, present when I'd rather check out, quick to say sorry. Watch over them tonight while they sleep.",
+      "Thank you for these kids. Forgive me for the moments today I was sharp or absent. Give me another morning to do it better."
+    ],
+    "Husband":[
+      "Thank you for her. Forgive me where I turned away today. Keep my eyes and my word where they belong, and let me wake up ready to love her better.",
+      "Guard my marriage in the hours I'm weakest. Make me a safe place for her to land. Tomorrow, again."
+    ],
+    "Boyfriend":[
+      "Help me be a man worth trusting — the same one alone as I am with her. Keep me honest in the small things tonight.",
+      "Thank you for her. Make me someone she'd be safe saying yes to. Steady me in the hours it's hard."
+    ],
+    "Friend":[
+      "Watch over my friends tonight — the ones carrying something they haven't said out loud. Show me how to be there for them tomorrow.",
+      "Forgive me for the times I stayed quiet when a friend needed the truth. Make me braver, and kinder."
+    ],
+    "Business Partner":[
+      "Keep my word worth something tomorrow. When the shortcut is offered, let me see what it really costs. Guard my name while I sleep.",
+      "Thank you for the work. Forgive me where I put the ledger before the person today. Start me clean."
+    ],
+    "Son":[
+      "Thank you for the people who raised me, flaws and all. Make me patient with them and honest with myself. Help me become the man they hoped for.",
+      "Forgive me where I've been distant. Give me the humility to call, and the grace to honor them without pretending."
+    ]
+  };
+  var QUIET_MOMENTS=[
+    "Sit still. Feel your feet on the floor and your breath going out slow. Picture the whole day — the wins, the misses, the unfinished parts — set into a box, and close the lid. It keeps until morning.",
+    "One minute of quiet. Don't fix anything. Don't plan anything. Just let the day settle, like dust after a truck goes by.",
+    "Breathe out longer than you breathe in. Let each exhale carry a little of the day off your chest, until your shoulders drop.",
+    "Say the name of each person you love, slowly, once. That's the prayer if you don't have another one. Then sleep."
+  ];
+
+  /* ---------- render ---------- */
+  var role = get(LS.role) || "Father";
+  if(ROLES.indexOf(role)<0) role="Father";
+
+  function pickStable(arr,salt){
+    var d=new Date();
+    var seed=d.getFullYear()*1000 + (d.getMonth()*31+d.getDate()) + (salt||0);
+    return arr[seed % arr.length];
+  }
+  var bump=0;
+  function pick(arr){ return arr[(Math.floor(Math.random()*arr.length))]; }
+
+  /* ---------- content: anti-repeat memory + the user's own words ---------- */
+  var seen = (function(){ try{ var s=JSON.parse(get(LS.seen)||"[]"); return Array.isArray(s)?s:[]; }catch(e){ return []; } })();
+  function markSeen(text){
+    if(!text) return;
+    var i=seen.indexOf(text); if(i!==-1) seen.splice(i,1);
+    seen.push(text);
+    if(seen.length>60) seen=seen.slice(seen.length-60);
+    set(LS.seen, JSON.stringify(seen));
+  }
+  // pick a line you haven't seen lately; once the pool is exhausted, at least never repeat back-to-back
+  function pickFresh(arr){
+    if(!arr || !arr.length) return "";
+    var last=seen.length ? seen[seen.length-1] : null;
+    var fresh=arr.filter(function(x){ return seen.indexOf(x)===-1; });
+    var pool=fresh.length ? fresh : arr.filter(function(x){ return x!==last; });
+    if(!pool.length) pool=arr;
+    var choice=pool[Math.floor(Math.random()*pool.length)];
+    markSeen(choice);
+    return choice;
+  }
+
+  function loadMine(){
+    try{ var m=JSON.parse(get(LS.mine)||"[]"); return Array.isArray(m)?m:[]; }catch(e){ return []; }
+  }
+  // the user's own lines that fit this phase: w = "first" | "any" | "hard"
+  function mineFor(phase){
+    return loadMine().filter(function(m){
+      if(m.w==="any") return true;
+      if(m.w==="first") return phase==="predawn"||phase==="morning";
+      if(m.w==="hard") return phase==="evening"||phase==="night";
+      return false;
+    }).map(function(m){ return m.t; });
+  }
+
+  // the word for this exact moment: stable for the day per phase+role, fresh across days
+  function wordForToday(phaseKey, poolArr){
+    var key=today()+"|"+phaseKey+"|"+role;
+    var store; try{ store=JSON.parse(get(LS.todayWord)||"{}"); }catch(e){ store={}; }
+    if(store && store.key===key && store.text && poolArr.indexOf(store.text)!==-1) return store.text;
+    var t=pickFresh(poolArr);
+    set(LS.todayWord, JSON.stringify({ key:key, text:t }));
+    return t;
+  }
+  function newWordForToday(phaseKey, poolArr){
+    var t=pickFresh(poolArr);
+    set(LS.todayWord, JSON.stringify({ key: today()+"|"+phaseKey+"|"+role, text:t }));
+    return t;
+  }
+
+  function applyTheme(){
+    var p=currentPhase(), t=THEMES[p];
+    document.body.style.setProperty("--bg-top",t.top);
+    document.body.style.setProperty("--bg-bot",t.bot);
+    document.querySelector('meta[name=theme-color]').setAttribute("content",t.top);
+    document.getElementById("phaseLine").innerHTML="<b>"+t.name+"</b> — "+t.note;
+  }
+
+  function setRole(r){
+    role=r; set(LS.role,r);
+    renderRoles(); buildMiniRoles(); renderWord();
+    if(typeof renderEvening==="function") renderEvening();
+    var pp=document.getElementById("prayerPane");
+    if(pp && pp.classList.contains("on")){ var q=prayerPool(); document.getElementById("prayerText").textContent = q.role.length ? pick(q.role) : pick(q.all); }
+    if(curTheme && document.getElementById("modalBack").classList.contains("on")) openHelp(curTheme);
+  }
+
+  function renderRoles(){
+    var box=document.getElementById("roles"); if(!box) return;
+    box.innerHTML="";
+    ROLES.forEach(function(r){
+      var b=document.createElement("button");
+      b.className="role"; b.textContent=r;
+      b.setAttribute("aria-pressed", r===role ? "true":"false");
+      b.onclick=function(){ setRole(r); };
+      box.appendChild(b);
+    });
+  }
+
+  function buildMiniRoles(){
+    var box=document.getElementById("miniRoles"); if(!box) return;
+    box.innerHTML="";
+    ROLES.forEach(function(r){
+      var b=document.createElement("button");
+      b.type="button"; b.className="mini-role"; b.textContent=r;
+      b.setAttribute("aria-pressed", r===role ? "true":"false");
+      b.onclick=function(){ setRole(r); closeMiniRoles(); };
+      box.appendChild(b);
+    });
+  }
+  function closeMiniRoles(){
+    var box=document.getElementById("miniRoles"); if(box) box.classList.remove("on");
+  }
+
+  // role-specific lines first, then the shared pool
+  function merge(roleArr, sharedArr){
+    return (roleArr && roleArr.length ? roleArr : []).concat(sharedArr || []);
+  }
+  function helpPool(key){
+    var t=HELP[key];
+    var rl=(t.byRole && t.byRole[role]) || [];
+    return { role:rl, all:merge(rl, t.lines) };
+  }
+  function prayerPool(){
+    var rl=PRAYERS_BY_ROLE[role] || [];
+    return { role:rl, all:merge(rl, PRAYERS) };
+  }
+
+  function kickerHTML(prefix){
+    return prefix + ' <button type="button" class="role-swap" id="roleSwap">' +
+      role + '<span class="rs-caret">▾</span></button>';
+  }
+  function wordPool(p){
+    if(p==="morning") return merge(MORNING[role], mineFor("morning"));
+    var rl=(PHASE_BY_ROLE[p] && PHASE_BY_ROLE[p][role]) || [];
+    return merge(rl, PHASE_GENERAL[p] || PHASE_GENERAL.day).concat(mineFor(p));
+  }
+  function renderWord(fresh){
+    var p=currentPhase();
+    document.getElementById("wordKicker").innerHTML =
+      kickerHTML(p==="morning" ? "This morning, as a" : THEMES[p].name+", as a");
+    var pool=wordPool(p);
+    var el=document.getElementById("wordText");
+    var text = fresh ? newWordForToday(p, pool) : wordForToday(p, pool);
+    el.textContent = text;
+    markSeen(text);
+  }
+
+  /* anchor */
+  function renderAnchor(){
+    var view=document.getElementById("anchorView");
+    var d=today();
+    var savedDate=get(LS.anchorDate), savedText=get(LS.anchorText);
+    var prev=get(LS.prevAnchor);
+    var isToday = savedDate===d && savedText;
+    view.innerHTML="";
+
+    if(isToday && currentPhase()!=="morning" && currentPhase()!=="predawn"){
+      var p=document.createElement("div");
+      p.innerHTML='<div style="font-size:12px;color:var(--ink-faint);margin-bottom:4px">You promised this morning:</div>';
+      var q=document.createElement("div"); q.className="prev serif"; q.textContent="“"+savedText+"”";
+      var edit=document.createElement("button"); edit.className="refresh"; edit.textContent="↺ change it";
+      edit.onclick=function(){ showAnchorEditor(savedText); };
+      p.appendChild(q); p.appendChild(edit); view.appendChild(p);
+      return;
+    }
+    showAnchorEditor(isToday?savedText:"");
+  }
+  function showAnchorEditor(val){
+    var view=document.getElementById("anchorView"); view.innerHTML="";
+    if(get(LS.prevAnchor)){
+      var y=document.createElement("div");
+      y.style.cssText="font-size:12px;color:var(--ink-faint);margin-bottom:8px";
+      y.textContent="Yesterday: “"+get(LS.prevAnchor)+"”";
+      view.appendChild(y);
+    }
+    var ta=document.createElement("textarea");
+    ta.placeholder="e.g. I put the phone away when I walk in the door. / I call my dad. / I don't check that account.";
+    ta.value=val||"";
+    var btn=document.createElement("button"); btn.className="btn"; btn.style.marginTop="10px"; btn.textContent="Set my anchor";
+    var msg=document.createElement("div"); msg.className="saved";
+    btn.onclick=function(){
+      var v=ta.value.trim(); if(!v){msg.textContent="";return;}
+      var oldDate=get(LS.anchorDate), oldText=get(LS.anchorText);
+      if(oldText && oldDate && oldDate!==today()) set(LS.prevAnchor, oldText);
+      set(LS.anchorText,v); set(LS.anchorDate,today());
+      markDay();
+      if(typeof markHint==="function") markHint("anchor");
+      if(typeof renderEvening==="function") renderEvening();
+      if(typeof renderActions==="function") renderActions();
+      msg.textContent="Set. Carry it all day. ";
+      if(!get(LS.remind)){
+        var nudge=document.createElement("button");
+        nudge.className="mlink"; nudge.style.marginTop="0"; nudge.textContent="get a midday nudge to check back";
+        nudge.onclick=function(){ openRemind(); };
+        msg.appendChild(nudge);
+      }
+    };
+    view.appendChild(ta); view.appendChild(btn); view.appendChild(msg);
+  }
+
+  /* ---------- one modal, many panels ---------- */
+  function openModal(id){
+    var ps=document.querySelectorAll(".mpanel");
+    for(var i=0;i<ps.length;i++) ps[i].classList.toggle("on", ps[i].id===id);
+    document.getElementById("modalBack").classList.add("on");
+  }
+
+  function openHelpMenu(){
+    if(!backupCfg()){
+      inlineHint(document.getElementById("helpMenuHint"),
+        "Before you need this —", "set someone you can reach", openBackup, "backup");
+    } else {
+      var hm=document.getElementById("helpMenuHint"); if(hm){ hm.innerHTML=""; hm.className=""; }
+    }
+    openModal("mpHelpMenu");
+  }
+  function openAnchor(){ renderAnchor(); openModal("mpAnchor"); }
+  function openEvening(){ renderEvening(); renderReflect(); renderStreak(); openModal("mpEvening"); }
+  function openInstall(){ openModal("mpInstall"); }
+  function openRemind(){ renderRemind(); openModal("mpRemind"); }
+
+  /* ---------- calendar reminders (no backend, no notification permission) ---------- */
+  var APP_URL="https://first-light-daily.netlify.app";
+  var REMINDERS=[
+    { key:"morning", uid:"firstlight-morning@first-light-daily.netlify.app", label:"The morning", time:"05:45",
+      summary:"First Light — the morning",
+      desc:"Before the day can push you around, decide who you're going to be. Then set one promise to keep." },
+    { key:"midday", uid:"firstlight-midday@first-light-daily.netlify.app", label:"Keep your promise", time:"12:30",
+      summary:"First Light — keep your promise",
+      desc:"Halfway through. Keep the one promise you made this morning — one kept promise changes the day." },
+    { key:"night", uid:"firstlight-night@first-light-daily.netlify.app", label:"Lay the day down", time:"21:00",
+      summary:"First Light — lay the day down",
+      desc:"The work is done. Put the day down at the door. However today went, coming back is the win." }
+  ];
+  function remindSaved(){ try{ return JSON.parse(get(LS.remind)||"{}") || {}; }catch(e){ return {}; } }
+
+  function renderRemind(){
+    var saved=remindSaved();
+    var box=document.getElementById("remindRows"); box.innerHTML="";
+    REMINDERS.forEach(function(r){
+      var s=saved[r.key]||{};
+      var row=document.createElement("label"); row.className="remind-row";
+      var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=(s.on!==false); cb.dataset.k=r.key;
+      var nm=document.createElement("span"); nm.className="remind-name"; nm.textContent=r.label;
+      var tm=document.createElement("input"); tm.type="time"; tm.value=s.time||r.time; tm.dataset.k=r.key;
+      row.appendChild(cb); row.appendChild(nm); row.appendChild(tm);
+      box.appendChild(row);
+    });
+    document.getElementById("remindMsg").textContent="";
+  }
+
+  function icsEsc(s){
+    return String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
+  }
+  function icsFold(line){
+    var out="";
+    while(line.length>73){ out+=line.slice(0,73)+"\r\n "; line=line.slice(73); }
+    return out+line;
+  }
+  function buildICS(items){
+    var now=new Date();
+    var stamp=now.toISOString().replace(/[-:]/g,"").replace(/\.\d{3}/,"");
+    var seq=Math.floor(now.getTime()/1000);
+    var day=now.toISOString().slice(0,10).replace(/-/g,"");
+    var L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//First Light//Reminders//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
+    items.forEach(function(it){
+      var t=it.time.replace(":","")+"00"; // 05:45 -> 054500  (floating local time)
+      L.push("BEGIN:VEVENT");
+      L.push("UID:"+it.uid);
+      L.push("DTSTAMP:"+stamp);
+      L.push("DTSTART:"+day+"T"+t);
+      L.push("DURATION:PT10M");
+      L.push("RRULE:FREQ=DAILY");
+      L.push(icsFold("SUMMARY:"+icsEsc(it.summary)));
+      L.push(icsFold("DESCRIPTION:"+icsEsc(it.desc+"\n\nOpen First Light: "+APP_URL)));
+      L.push("URL:"+APP_URL);
+      L.push("SEQUENCE:"+seq);
+      L.push("BEGIN:VALARM","ACTION:DISPLAY",icsFold("DESCRIPTION:"+icsEsc(it.summary)),"TRIGGER:PT0S","END:VALARM");
+      L.push("END:VEVENT");
+    });
+    L.push("END:VCALENDAR");
+    return L.join("\r\n");
+  }
+  function deliverICS(text, forceDownload){
+    var ua=navigator.userAgent||"";
+    var isIOS=/iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1);
+    if(isIOS && !forceDownload){
+      var b64=btoa(unescape(encodeURIComponent(text)));
+      window.location.href="data:text/calendar;charset=utf-8;base64,"+b64;
+      return;
+    }
+    var blob=new Blob([text],{type:"text/calendar;charset=utf-8"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url; a.download="first-light-reminders.ics"; a.rel="noopener";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ try{document.body.removeChild(a);}catch(e){} URL.revokeObjectURL(url); },2000);
+  }
+  function collectRemind(){
+    var saved={}, chosen=[];
+    document.querySelectorAll("#remindRows .remind-row").forEach(function(row){
+      var cb=row.querySelector('input[type="checkbox"]');
+      var tm=row.querySelector('input[type="time"]');
+      var key=cb.dataset.k;
+      saved[key]={ on:cb.checked, time:tm.value };
+      if(cb.checked && tm.value){
+        var base=REMINDERS.filter(function(x){return x.key===key;})[0];
+        chosen.push({ uid:base.uid, time:tm.value, summary:base.summary, desc:base.desc });
+      }
+    });
+    set(LS.remind, JSON.stringify(saved));
+    return chosen;
+  }
+  function doRemind(forceDownload){
+    var chosen=collectRemind();
+    var msg=document.getElementById("remindMsg");
+    if(!chosen.length){ msg.textContent="Pick at least one reminder."; return; }
+    deliverICS(buildICS(chosen), forceDownload);
+    msg.textContent = forceDownload ? "Saved. Open the file to add it to your calendar."
+                                    : "Opening your calendar — choose \u201cAdd All.\u201d";
+  }
+
+  /* ---------- privacy lock (all local: PIN hash + optional platform biometric) ---------- */
+  function b64enc(buf){ return btoa(String.fromCharCode.apply(null, new Uint8Array(buf))); }
+  function b64dec(s){ var bin=atob(s), a=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i); return a.buffer; }
+  function lockCfg(){ try{ return JSON.parse(get(LS.lock)||"null"); }catch(e){ return null; } }
+  function lockOn(){ return !!lockCfg(); }
+
+  async function hashPin(pin, salt){
+    var data=new TextEncoder().encode(salt+"|"+pin);
+    var digest=await crypto.subtle.digest("SHA-256", data);
+    return b64enc(digest);
+  }
+  function newSalt(){ return b64enc(crypto.getRandomValues(new Uint8Array(16))); }
+
+  function bioAvailable(){
+    return !!(window.PublicKeyCredential && navigator.credentials && location.protocol==="https:");
+  }
+  async function bioRegister(){
+    var cred=await navigator.credentials.create({ publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      rp:{ name:"First Light", id:location.hostname },
+      user:{ id:crypto.getRandomValues(new Uint8Array(16)), name:"first-light", displayName:"First Light" },
+      pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],
+      authenticatorSelection:{ authenticatorAttachment:"platform", userVerification:"required", residentKey:"preferred" },
+      timeout:60000, attestation:"none"
+    }});
+    return b64enc(cred.rawId);
+  }
+  async function bioVerify(credId){
+    await navigator.credentials.get({ publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      rpId:location.hostname,
+      allowCredentials:[{ type:"public-key", id:b64dec(credId), transports:["internal","hybrid"] }],
+      userVerification:"required", timeout:60000
+    }});
+    return true; // throws on cancel / failure
+  }
+
+  var UNLOCKED = !lockOn();
+  var unlocking = false;
+  var pinBuf = "";
+
+  function renderPinDots(){
+    var dots=document.querySelectorAll("#pinDots i");
+    for(var i=0;i<dots.length;i++) dots[i].classList.toggle("on", i<pinBuf.length);
+  }
+  function buildPinPad(){
+    var pad=document.getElementById("pinPad"); if(pad.childElementCount) return;
+    var keys=["1","2","3","4","5","6","7","8","9","","0","del"];
+    keys.forEach(function(k){
+      var b=document.createElement("button");
+      if(k===""){ b.className="blank"; b.disabled=true; }
+      else if(k==="del"){ b.textContent="⌫"; b.onclick=function(){ pinBuf=pinBuf.slice(0,-1); renderPinDots(); }; }
+      else { b.textContent=k; b.onclick=(function(kk){ return function(){ pinPress(kk); }; })(k); }
+      pad.appendChild(b);
+    });
+  }
+  function pinPress(d){
+    if(pinBuf.length>=4) return;
+    pinBuf+=d; renderPinDots();
+    if(pinBuf.length===4) setTimeout(submitPin,120);
+  }
+  async function submitPin(){
+    var cfg=lockCfg(); if(!cfg){ doUnlock(); return; }
+    var h=await hashPin(pinBuf, cfg.pinSalt);
+    if(h===cfg.pinHash){ doUnlock(); }
+    else {
+      document.getElementById("lockErr").textContent="That's not it. Try again.";
+      var dd=document.getElementById("pinDots"); dd.classList.add("shake");
+      setTimeout(function(){ pinBuf=""; renderPinDots(); dd.classList.remove("shake"); }, 420);
+    }
+  }
+  function lockNow(){
+    if(!lockOn()) return;
+    UNLOCKED=false; pinBuf="";
+    buildPinPad(); renderPinDots();
+    document.getElementById("lockErr").textContent="";
+    document.getElementById("lockTitle").textContent = get(LS.discreet)==="1" ? "Locked" : "First Light";
+    document.getElementById("lockBioBtn").hidden = !(lockCfg() && lockCfg().bio);
+    document.getElementById("lockScreen").hidden=false;
+    applyDiscreet();
+  }
+  function doUnlock(){
+    UNLOCKED=true; pinBuf="";
+    document.getElementById("lockScreen").hidden=true;
+    applyDiscreet();
+  }
+  async function tryBio(){
+    var cfg=lockCfg(); if(!cfg || !cfg.bio || UNLOCKED) return;
+    if(!bioAvailable()) return;
+    unlocking=true;
+    try{ await bioVerify(cfg.credId); doUnlock(); }
+    catch(e){ /* fall back to PIN */ }
+    unlocking=false;
+  }
+  function applyDiscreet(){
+    document.title = (get(LS.discreet)==="1" && !UNLOCKED) ? "Locked" : "First Light";
+  }
+
+  document.addEventListener("visibilitychange", function(){
+    if(!lockOn()) return;
+    if(document.visibilityState==="hidden"){
+      if(!unlocking) lockNow();
+    } else if(!UNLOCKED){
+      tryBio();
+    }
+  });
+  window.addEventListener("pagehide", function(){ if(lockOn() && !unlocking) lockNow(); });
+
+  function openLock(){ renderLockSetup(); openModal("mpLock"); }
+  function renderLockSetup(){
+    var box=document.getElementById("lockSetup"); box.innerHTML="";
+    var cfg=lockCfg();
+
+    if(!cfg){
+      var f1=document.createElement("div"); f1.className="field";
+      f1.innerHTML='<label>Choose a 4-digit code</label>';
+      var p1=document.createElement("input"); p1.type="tel"; p1.inputMode="numeric"; p1.maxLength=4; p1.autocomplete="off";
+      var f2=document.createElement("div"); f2.className="field";
+      f2.innerHTML='<label>Enter it again</label>';
+      var p2=document.createElement("input"); p2.type="tel"; p2.inputMode="numeric"; p2.maxLength=4; p2.autocomplete="off";
+      f1.appendChild(p1); f2.appendChild(p2);
+      var go=document.createElement("button"); go.className="btn"; go.style.marginTop="8px"; go.textContent="Turn on lock";
+      var warn=document.createElement("div"); warn.className="msub"; warn.style.cssText="font-size:12px;margin-top:12px";
+      warn.textContent="There's no way to reset a forgotten code — it never leaves your phone. Pick one you'll remember.";
+      var msg=document.createElement("div"); msg.className="saved";
+      go.onclick=async function(){
+        var a=(p1.value||"").trim(), b=(p2.value||"").trim();
+        if(!/^\d{4}$/.test(a)){ msg.style.color="#e6a3a3"; msg.textContent="Four digits."; return; }
+        if(a!==b){ msg.style.color="#e6a3a3"; msg.textContent="The two codes don't match."; return; }
+        var salt=newSalt();
+        set(LS.lock, JSON.stringify({ pinSalt:salt, pinHash:await hashPin(a, salt), bio:false }));
+        UNLOCKED=true;
+        renderLockSetup();
+      };
+      box.appendChild(f1); box.appendChild(f2); box.appendChild(go); box.appendChild(warn); box.appendChild(msg);
+      return;
+    }
+
+    var on=document.createElement("div"); on.className="lock-on";
+    on.textContent="Lock is on. First Light asks for your code each time it opens or comes back from the background.";
+    box.appendChild(on);
+
+    if(bioAvailable()){
+      var r=document.createElement("label"); r.className="lock-row";
+      var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!cfg.bio;
+      var t=document.createElement("span"); t.textContent="Also unlock with Face ID / fingerprint";
+      r.appendChild(cb); r.appendChild(t); box.appendChild(r);
+      cb.onchange=async function(){
+        if(cb.checked){
+          try{
+            var credId=await bioRegister();
+            var c=lockCfg(); c.bio=true; c.credId=credId; set(LS.lock, JSON.stringify(c));
+          }catch(e){ cb.checked=false; }
+        } else {
+          var c2=lockCfg(); c2.bio=false; delete c2.credId; set(LS.lock, JSON.stringify(c2));
+        }
+      };
+    }
+
+    var r2=document.createElement("label"); r2.className="lock-row";
+    var cb2=document.createElement("input"); cb2.type="checkbox"; cb2.checked=get(LS.discreet)==="1";
+    var t2=document.createElement("span"); t2.textContent="Discreet: show the locked screen and browser tab as “Locked”";
+    r2.appendChild(cb2); r2.appendChild(t2); box.appendChild(r2);
+    cb2.onchange=function(){ set(LS.discreet, cb2.checked?"1":"0"); applyDiscreet(); };
+
+    var note=document.createElement("div"); note.className="msub"; note.style.cssText="font-size:12px;margin-top:14px";
+    note.textContent="Tip: when you add First Light to your home screen, rename the icon to anything you like before tapping Add.";
+    box.appendChild(note);
+
+    var off=document.createElement("button"); off.className="btn ghost"; off.style.marginTop="14px"; off.textContent="Turn off the lock";
+    off.onclick=function(){
+      if(off.dataset.armed){
+        localStorage.removeItem(LS.lock); localStorage.removeItem(LS.discreet);
+        UNLOCKED=true; applyDiscreet(); renderLockSetup();
+      } else {
+        off.dataset.armed="1"; off.textContent="Tap again to confirm — the lock will be removed";
+      }
+    };
+    box.appendChild(off);
+  }
+
+  function renderActions(){
+    var box=document.getElementById("actions"); if(!box) return;
+    box.innerHTML="";
+    var p=currentPhase();
+    var hasAnchor = get(LS.anchorText) && get(LS.anchorDate)===today();
+    var list=[];
+    if(p==="predawn"||p==="morning"||p==="day"){
+      list.push([hasAnchor ? "today's promise" : "set today's anchor", openAnchor, !hasAnchor]);
+    } else if(hasAnchor){
+      list.push(["today's promise", openAnchor, false]);
+    }
+    if(p==="evening"||p==="night"){
+      list.push(["lay the day down", openEvening, true]);
+    }
+    list.push(["I need help now", openHelpMenu, false]);
+    list.forEach(function(it){
+      var b=document.createElement("button");
+      b.className="action"+(it[2]?" lead":"");
+      b.textContent=it[0]; b.onclick=it[1];
+      box.appendChild(b);
+    });
+    renderCardHint();
+  }
+
+  /* ---------- onboarding: the first day ----------
+     No setup wall. One question up front (the role), everything else
+     introduced the moment it becomes real. Each prompt shows once. */
+  function hints(){ try{ var h=JSON.parse(get(LS.hints)||"{}"); return h&&typeof h==="object"?h:{}; }catch(e){ return {}; } }
+  function hintDone(k){ return !!hints()[k]; }
+  function markHint(k){ var h=hints(); h[k]=1; set(LS.hints, JSON.stringify(h)); }
+  function isFirstDay(){ return get(LS.firstSeen)===today(); }
+  function keptSomething(){
+    return !!(get(LS.anchorText) || loadMine().length || parseInt(get(LS.total)||"0",10)>=2 || get(LS.remind) || get(LS.backup));
+  }
+
+  function needsFirstRun(){ return !get(LS.onboarded) && !get(LS.role); }
+  function showFirstRun(){
+    var box=document.getElementById("frRoles"); box.innerHTML="";
+    ROLES.forEach(function(r){
+      var b=document.createElement("button"); b.type="button"; b.className="fr-role"; b.textContent=r;
+      b.onclick=function(){ setRole(r); finishFirstRun(); };
+      box.appendChild(b);
+    });
+    document.getElementById("frSkip").onclick=finishFirstRun;
+    document.getElementById("firstRun").hidden=false;
+  }
+  function finishFirstRun(){
+    set(LS.onboarded,"1");
+    if(!get(LS.firstSeen)) set(LS.firstSeen, today());
+    document.getElementById("firstRun").hidden=true;
+    renderWord(); renderActions();
+  }
+
+  // a one-time inline nudge inside a modal panel
+  function inlineHint(el, text, goText, act, key){
+    if(!el) return;
+    el.innerHTML="";
+    if(hintDone(key)) return;
+    el.className="card-hint";
+    el.style.margin="4px 0 14px";
+    var t=document.createElement("span"); t.textContent=text+" ";
+    var g=document.createElement("button"); g.className="hint-go"; g.textContent=goText;
+    g.onclick=function(){ markHint(key); el.innerHTML=""; el.className=""; act(); };
+    var x=document.createElement("button"); x.className="hint-x"; x.setAttribute("aria-label","dismiss"); x.textContent="✕";
+    x.onclick=function(){ markHint(key); el.innerHTML=""; el.className=""; };
+    el.appendChild(t); el.appendChild(g); el.appendChild(x);
+  }
+
+  function renderCardHint(){
+    var el=document.getElementById("cardHint"); if(!el) return;
+    el.innerHTML=""; el.classList.add("empty");
+    var hint=null;
+    var ph=currentPhase();
+    var hasAnchorToday = get(LS.anchorText) && get(LS.anchorDate)===today();
+    if(isFirstDay() && !hintDone("fastpath")){
+      hint={ text:"New here?", go:"a minute to get set up", act:openWelcome, key:"fastpath" };
+    } else if((ph==="predawn"||ph==="morning") && !hasAnchorToday && !hintDone("anchor")){
+      hint={ text:"Set one promise for today —", go:"First Light brings it back tonight", act:openAnchor, key:"anchor" };
+    } else if(keptSomething() && !lockOn() && !hintDone("lock")){
+      hint={ text:"You're keeping things here now.", go:"lock it?", act:openLock, key:"lock" };
+    }
+    if(!hint) return;
+    var t=document.createElement("span"); t.textContent=hint.text+" ";
+    var g=document.createElement("button"); g.className="hint-go"; g.textContent=hint.go;
+    g.onclick=function(){ markHint(hint.key); hint.act(); renderCardHint(); };
+    var x=document.createElement("button"); x.className="hint-x"; x.setAttribute("aria-label","dismiss"); x.textContent="✕";
+    x.onclick=function(){ markHint(hint.key); renderCardHint(); };
+    el.appendChild(t); el.appendChild(g); el.appendChild(x);
+    el.classList.remove("empty");
+  }
+
+  /* the optional two-minute path */
+  var backToWelcome=false;
+  function openWelcome(){ renderWelcome(); openModal("mpWelcome"); }
+  function renderWelcome(){
+    var box=document.getElementById("welcomeSteps"); box.innerHTML="";
+    var steps=[
+      { done:!!backupCfg(), title:"Someone in your corner", note:"One man you can reach when the pull is strong.", act:openBackup },
+      { done:!!get(LS.remind), title:"A nudge through the day", note:"Gentle reminders from your own calendar.", act:openRemind },
+      { done:lockOn(), title:"A lock", note:"So the app opens only for you.", act:openLock }
+    ];
+    steps.forEach(function(s){
+      var row=document.createElement("div"); row.className="lock-row";
+      var t=document.createElement("span");
+      t.innerHTML="<b style='color:var(--ink);font-weight:600'>"+s.title+"</b><br><span style='color:var(--ink-soft);font-size:13px'>"+s.note+"</span>";
+      var b=document.createElement("button");
+      b.className="mlink"; b.style.marginTop="0"; b.style.whiteSpace="nowrap";
+      if(s.done){
+        b.textContent="done"; b.style.color="var(--ok)"; b.style.borderBottom="none"; b.disabled=true;
+      } else {
+        b.textContent="set up →";
+        b.onclick=function(){ backToWelcome=true; s.act(); };
+      }
+      row.appendChild(t); row.appendChild(b);
+      box.appendChild(row);
+    });
+  }
+
+  /* ---------- call for backup (drafts a text/call to a person you set; you send it) ---------- */
+  var DEFAULT_BACKUP_MSG =
+    "Rough night. I'm trying to hold the line and I don't want to be alone with it. " +
+    "Nothing you need to fix — a word back would help. Thanks for being someone I can send this to.";
+  function backupCfg(){ try{ return JSON.parse(get(LS.backup)||"null"); }catch(e){ return null; } }
+  function telHref(phone){ return "tel:"+String(phone).replace(/[^\d+]/g,""); }
+  function smsHref(phone, body){
+    return "sms:"+String(phone).replace(/[^\d+]/g,"")+"?&body="+encodeURIComponent(body||"");
+  }
+
+  /* your own words */
+  var mineWhenSel="any";
+  function openMine(){ document.getElementById("mineMsg").textContent=""; renderMine(); openModal("mpMine"); }
+  function renderMine(){
+    var wb=document.querySelectorAll("#mineWhen button");
+    for(var i=0;i<wb.length;i++){
+      (function(b){
+        b.setAttribute("aria-pressed", b.dataset.w===mineWhenSel ? "true":"false");
+        b.onclick=function(){ mineWhenSel=b.dataset.w; renderMine(); };
+      })(wb[i]);
+    }
+    var list=document.getElementById("mineList"); list.innerHTML="";
+    var mine=loadMine();
+    var lbl={ first:"first thing", any:"any time", hard:"hard hours" };
+    if(!mine.length){
+      var e=document.createElement("div"); e.className="msub"; e.style.fontSize="12px";
+      e.textContent="Nothing yet. What would you want to hear at 2am — or over breakfast?";
+      list.appendChild(e);
+      return;
+    }
+    mine.forEach(function(m, idx){
+      var row=document.createElement("div"); row.className="mine-item";
+      var t=document.createElement("div"); t.className="mi-txt"; t.textContent="“"+m.t+"”";
+      var w=document.createElement("div"); w.className="mi-when"; w.textContent=lbl[m.w]||"any time";
+      var d=document.createElement("button"); d.className="mi-del"; d.textContent="✕"; d.setAttribute("aria-label","Remove");
+      d.onclick=function(){
+        var arr=loadMine(); arr.splice(idx,1); set(LS.mine, JSON.stringify(arr));
+        renderMine(); renderWord();
+      };
+      row.appendChild(t); row.appendChild(w); row.appendChild(d);
+      list.appendChild(row);
+    });
+  }
+  function addMine(){
+    var ta=document.getElementById("mineText");
+    var t=(ta.value||"").trim();
+    var msg=document.getElementById("mineMsg");
+    if(t.length<3){ msg.style.color="#e6a3a3"; msg.textContent="Write a little more."; return; }
+    var arr=loadMine(); arr.push({ t:t, w:mineWhenSel }); set(LS.mine, JSON.stringify(arr));
+    ta.value="";
+    renderMine();
+    msg.style.color="var(--ok)"; msg.textContent="Added. It's in the rotation now.";
+    renderWord();
+  }
+
+  function openBackup(){ renderBackupForm(); openModal("mpBackup"); }
+  function renderBackupForm(statusMsg){
+    var box=document.getElementById("backupForm"); box.innerHTML="";
+    var cfg=backupCfg()||{};
+
+    function field(labelText, el){
+      var w=document.createElement("label"); w.className="bk-field";
+      var l=document.createElement("span"); l.style.cssText="display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px"; l.textContent=labelText;
+      w.appendChild(l); w.appendChild(el); return w;
+    }
+    var name=document.createElement("input"); name.type="text"; name.placeholder="Marcus"; name.value=cfg.name||"";
+    var phone=document.createElement("input"); phone.type="tel"; phone.placeholder="Their number"; phone.value=cfg.phone||"";
+    var msg=document.createElement("textarea"); msg.value=cfg.msg||DEFAULT_BACKUP_MSG;
+
+    box.appendChild(field("Their name", name));
+    box.appendChild(field("Their number", phone));
+    box.appendChild(field("The message First Light will draft", msg));
+
+    var save=document.createElement("button"); save.className="btn"; save.style.marginTop="8px"; save.textContent = backupCfg()?"Save changes":"Save";
+    var note=document.createElement("div"); note.className="saved";
+    if(statusMsg){ note.style.color="var(--ok)"; note.textContent=statusMsg; }
+    save.onclick=function(){
+      var n=name.value.trim(), p=phone.value.trim();
+      if(!n || !p){ note.style.color="#e6a3a3"; note.textContent="A name and a number, both."; return; }
+      set(LS.backup, JSON.stringify({ name:n, phone:p, msg:(msg.value.trim()||DEFAULT_BACKUP_MSG) }));
+      renderHelpReach();
+      renderBackupForm("Saved. "+n+" is in your corner now.");
+    };
+    box.appendChild(save); box.appendChild(note);
+
+    if(backupCfg()){
+      var rm=document.createElement("button"); rm.className="btn ghost"; rm.style.marginTop="12px"; rm.textContent="Remove";
+      rm.onclick=function(){
+        if(rm.dataset.armed){ localStorage.removeItem(LS.backup); renderBackupForm(); renderHelpReach(); }
+        else { rm.dataset.armed="1"; rm.textContent="Tap again to remove"; }
+      };
+      box.appendChild(rm);
+    }
+  }
+
+  function renderHelpReach(){
+    var box=document.getElementById("helpReach"); if(!box) return;
+    box.innerHTML="";
+    var cfg=backupCfg();
+    if(cfg){
+      var p=document.createElement("p"); p.textContent="You don't have to sit with this alone.";
+      var row=document.createElement("div"); row.className="reach-row";
+      var t=document.createElement("a"); t.className="r-text"; t.textContent="Text "+cfg.name;
+      t.href=smsHref(cfg.phone, cfg.msg); t.rel="noopener";
+      var c=document.createElement("a"); c.className="r-call"; c.textContent="Call "+cfg.name;
+      c.href=telHref(cfg.phone); c.rel="noopener";
+      row.appendChild(t); row.appendChild(c);
+      var e=document.createElement("button"); e.className="r-edit"; e.textContent="change who this is";
+      e.onclick=function(){ openBackup(); };
+      box.appendChild(p); box.appendChild(row); box.appendChild(e);
+    } else {
+      var b=document.createElement("button"); b.className="r-setup";
+      b.textContent="Set up someone you can reach in a moment like this";
+      b.onclick=function(){ openBackup(); };
+      box.appendChild(b);
+    }
+  }
+
+  /* help modal */
+  var curTheme=null;
+  function openHelp(key){
+    curTheme=key;
+    var h=HELP[key], p=helpPool(key);
+    document.getElementById("modalTitle").textContent=h.title+" · as a "+role;
+    document.getElementById("modalWord").textContent = p.role.length ? pickFresh(p.role) : pickFresh(p.all);
+    document.getElementById("breath").classList.remove("on");
+    stopBreath();
+    renderHelpReach();
+    openModal("mpHelpWord");
+  }
+  function renderHelpThemes(){
+    var box=document.getElementById("helpThemes"); box.innerHTML="";
+    var map=[["faithful","Staying true to my partner"],["urge","A late-night urge"],
+             ["heart","My heart's gone hard toward people"],["worth","I don't feel worth the effort"]];
+    map.forEach(function(m){
+      var b=document.createElement("button"); b.textContent=m[1];
+      b.onclick=function(){ openHelp(m[0]); };
+      box.appendChild(b);
+    });
+  }
+
+  /* breathing */
+  var breathTimer=null;
+  function stopBreath(){
+    if(breathTimer){clearInterval(breathTimer);clearTimeout(breathTimer);breathTimer=null;}
+    document.getElementById("orb").classList.remove("expand");
+    document.getElementById("breathCue").textContent="Ready when you are";
+    document.getElementById("breathCount").textContent="";
+  }
+  function runBreath(){
+    var orb=document.getElementById("orb"),cue=document.getElementById("breathCue"),cnt=document.getElementById("breathCount");
+    var steps=[["Breathe in",4,true],["Hold",4,null],["Breathe out",4,false],["Hold",4,null]];
+    var cycles=4,i=0,c=0;
+    function step(){
+      if(c>=cycles){ cue.textContent="That's enough. You're steadier than a minute ago."; cnt.textContent=""; orb.classList.remove("expand"); breathTimer=null; return; }
+      var s=steps[i]; cue.textContent=s[0];
+      if(s[2]===true)orb.classList.add("expand");
+      if(s[2]===false)orb.classList.remove("expand");
+      var left=s[1];
+      cnt.textContent=left;
+      breathTimer=setInterval(function(){
+        left--; cnt.textContent=left>0?left:"";
+        if(left<=0){ clearInterval(breathTimer); i++; if(i>=steps.length){i=0;c++;} step(); }
+      },1000);
+    }
+    step();
+  }
+
+  /* ---------- presence (no punitive streak) ----------
+     We never count "consecutive days." Two numbers only:
+       - total: lifetime days you showed up. Only ever goes up. Nothing to lose.
+       - last 7: a soft, self-healing recent signal — miss a day and it barely moves.
+     Coming back after a gap is celebrated, not penalized. */
+  function migrateStreak(){
+    if(get(LS.total)===null && get("fl_days")!==null) set(LS.total, get("fl_days"));
+    if(get(LS.visits)===null && get("fl_last_day")) set(LS.visits, JSON.stringify([get("fl_last_day")]));
+  }
+  function loadVisits(){
+    var log; try{ log=JSON.parse(get(LS.visits)||"[]"); }catch(e){ log=[]; }
+    return Array.isArray(log) ? log : [];
+  }
+  function daysBetween(a,b){
+    return Math.round((new Date(b+"T00:00:00") - new Date(a+"T00:00:00"))/86400000);
+  }
+  function markDay(){
+    migrateStreak();
+    var d=today();
+    var log=loadVisits();
+    if(log.indexOf(d)!==-1){ renderStreak(); return; }
+    log.push(d); log.sort();
+    if(log.length>60) log=log.slice(log.length-60);
+    set(LS.visits, JSON.stringify(log));
+    set(LS.total, String((parseInt(get(LS.total)||"0",10))+1));
+    renderStreak();
+  }
+  function renderStreak(){
+    var el=document.getElementById("streak"); if(!el) return;
+    migrateStreak();
+    var total=parseInt(get(LS.total)||"0",10);
+    var log=loadVisits();
+    var d=today();
+    var here=log.indexOf(d)!==-1;
+
+    if(total<=0 && !here){
+      el.textContent="The first time you show up counts the same as the hundredth.";
+      return;
+    }
+
+    var prev=null;
+    for(var j=log.length-1;j>=0;j--){ if(log[j]!==d){ prev=log[j]; break; } }
+    if(here && prev && daysBetween(prev,d)>=2){
+      el.innerHTML="Welcome back. However long it was, today counts the same — that's the whole point. <b>"+total+"</b> day"+(total===1?"":"s")+" in all.";
+      return;
+    }
+
+    var wk=0;
+    for(var i=0;i<log.length;i++){ var g=daysBetween(log[i],d); if(g>=0 && g<7) wk++; }
+
+    if(total<3){
+      el.innerHTML="You've shown up <b>"+total+"</b> "+(total===1?"time":"times")+". Come back tomorrow — that's all it asks.";
+      return;
+    }
+    el.innerHTML="<b>"+wk+"</b> of the last 7 days · <b>"+total+"</b> in all. However the week went, coming back is the win.";
+  }
+  function renderReflect(){
+    var d=today();
+    var chosen=get(LS.reflect+d);
+    document.querySelectorAll("#reflectRow button").forEach(function(b){
+      b.setAttribute("aria-pressed", b.dataset.v===chosen ? "true":"false");
+    });
+    var q=document.getElementById("reflectQ");
+    if(chosen==="slipped") q.textContent="You slipped, and you came back to tell the truth about it. That's the whole fight. Tomorrow is clean.";
+    else if(chosen==="held") q.textContent="You held the line today. Notice it. That's who you are — not the exception, the pattern.";
+    else if(chosen==="mixed") q.textContent="Mixed day, and you're still here. Still counts. Rest now.";
+    else q.textContent="How did today go — the man you meant to be?";
+
+    var rh=document.getElementById("eveningRemindHint");
+    if(chosen && !get(LS.remind)){
+      inlineHint(rh, "Want a nudge to come back tomorrow?", "set a reminder", openRemind, "remind");
+    } else if(rh){ rh.innerHTML=""; rh.className=""; }
+  }
+  function renderReflectRow(){
+    document.querySelectorAll("#reflectRow button").forEach(function(b){
+      b.onclick=function(){
+        set(LS.reflect+today(), b.dataset.v);
+        markDay();
+        renderReflect();
+      };
+    });
+  }
+
+  /* evening reflection */
+  function renderEvening(fresh){
+    document.getElementById("eveningQuiet").textContent =
+      fresh ? pickFresh(QUIET_REFLECT) : pickStable(QUIET_REFLECT, 7);
+    var note=document.getElementById("eveningAnchorNote");
+    var at=get(LS.anchorText), ad=get(LS.anchorDate);
+    if(at && ad===today()){
+      note.textContent="This morning you promised: “"+at+"” — keep it or forgive it, then set it down.";
+      note.style.display="block";
+    } else { note.style.display="none"; }
+  }
+  var eveBreathTimer=null;
+  function stopEveBreath(){
+    if(eveBreathTimer){clearInterval(eveBreathTimer);eveBreathTimer=null;}
+    var o=document.getElementById("eveOrb"); if(o)o.classList.remove("expand");
+    var c=document.getElementById("eveCue"); if(c)c.textContent="Begin when you're ready";
+    var n=document.getElementById("eveCount"); if(n)n.textContent="";
+  }
+  function runEveBreath(){
+    stopEveBreath();
+    var orb=document.getElementById("eveOrb"),cue=document.getElementById("eveCue"),cnt=document.getElementById("eveCount");
+    var steps=[["Breathe in",4,true],["Hold",4,null],["Let it out, slow",6,false],["Rest",2,null]];
+    var cycles=4,i=0,c=0;
+    function step(){
+      if(c>=cycles){ cue.textContent="Enough. The day is down. Go to bed."; cnt.textContent=""; orb.classList.remove("expand"); eveBreathTimer=null; return; }
+      var s=steps[i]; cue.textContent=s[0];
+      if(s[2]===true)orb.classList.add("expand");
+      if(s[2]===false)orb.classList.remove("expand");
+      var left=s[1]; cnt.textContent=left;
+      eveBreathTimer=setInterval(function(){
+        left--; cnt.textContent=left>0?left:"";
+        if(left<=0){ clearInterval(eveBreathTimer); i++; if(i>=steps.length){i=0;c++;} step(); }
+      },1000);
+    }
+    step();
+  }
+  function showEvePane(which){
+    var pP=document.getElementById("prayerPane"), qP=document.getElementById("quietPane");
+    var tP=document.getElementById("tabPrayer"), tQ=document.getElementById("tabQuiet");
+    stopEveBreath();
+    if(which==="prayer"){
+      var on=!pP.classList.contains("on");
+      pP.classList.toggle("on",on); qP.classList.remove("on");
+      tP.setAttribute("aria-pressed",on?"true":"false"); tQ.setAttribute("aria-pressed","false");
+      if(on){ var pp=prayerPool(); document.getElementById("prayerText").textContent = pp.role.length ? pick(pp.role) : pick(pp.all); }
+    } else {
+      var on2=!qP.classList.contains("on");
+      qP.classList.toggle("on",on2); pP.classList.remove("on");
+      tQ.setAttribute("aria-pressed",on2?"true":"false"); tP.setAttribute("aria-pressed","false");
+      if(on2) document.getElementById("quietText").textContent=pickFresh(QUIET_MOMENTS);
+    }
+  }
+
+  /* wire up */
+  document.getElementById("wordRefresh").onclick=function(){ renderWord(true); };
+  document.getElementById("wordMine").onclick=openMine;
+  document.getElementById("mineAdd").onclick=addMine;
+  document.getElementById("wordKicker").addEventListener("click",function(e){
+    var t=e.target;
+    if(t && (t.id==="roleSwap" || (t.parentNode && t.parentNode.id==="roleSwap"))){
+      e.stopPropagation();
+      document.getElementById("miniRoles").classList.toggle("on");
+    }
+  });
+  document.addEventListener("click",function(e){
+    var box=document.getElementById("miniRoles");
+    if(!box || !box.classList.contains("on")) return;
+    if(box.contains(e.target)) return;
+    var k=document.getElementById("wordKicker");
+    if(k && k.contains(e.target)) return;
+    closeMiniRoles();
+  });
+  document.getElementById("eveningRefresh").onclick=function(){ renderEvening(true); };
+  document.getElementById("prayerRefresh").onclick=function(){ document.getElementById("prayerText").textContent=pickFresh(prayerPool().all); };
+  document.getElementById("tabPrayer").onclick=function(){ showEvePane("prayer"); };
+  document.getElementById("tabQuiet").onclick=function(){ showEvePane("quiet"); };
+  document.getElementById("eveBreathBtn").onclick=function(){ runEveBreath(); };
+  document.getElementById("modalX").onclick=closeModal;
+  document.getElementById("helpBack").onclick=openHelpMenu;
+  document.getElementById("modalBack").onclick=function(e){ if(e.target===this) closeModal(); };
+  document.getElementById("modalAnother").onclick=function(){
+    document.getElementById("modalWord").textContent=pickFresh(helpPool(curTheme).all);
+  };
+  document.getElementById("breathToggle").onclick=function(){
+    var b=document.getElementById("breath");
+    if(b.classList.contains("on")){ b.classList.remove("on"); stopBreath(); }
+    else { b.classList.add("on"); stopBreath(); runBreath(); }
+  };
+  function closeModal(){
+    document.getElementById("modalBack").classList.remove("on");
+    document.getElementById("breath").classList.remove("on");
+    stopBreath(); stopEveBreath();
+    if(backToWelcome){ backToWelcome=false; setTimeout(openWelcome, 10); }
+  }
+  document.getElementById("welcomeDone").onclick=function(){ markHint("fastpath"); backToWelcome=false; closeModal(); renderCardHint(); };
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape" && document.getElementById("modalBack").classList.contains("on")) closeModal();
+  });
+
+  document.getElementById("footPhase").onclick=function(){
+    var w=document.getElementById("phaseSwitchWrap");
+    w.style.display = (w.style.display==="none"||!w.style.display) ? "block" : "none";
+  };
+  document.getElementById("footRemind").onclick=openRemind;
+  document.getElementById("remindGo").onclick=function(){ doRemind(false); };
+  document.getElementById("remindDownload").onclick=function(){ doRemind(true); };
+  document.getElementById("footBackup").onclick=openBackup;
+  document.getElementById("footLock").onclick=openLock;
+  document.getElementById("lockBioBtn").onclick=function(){ tryBio(); };
+
+  var ps=document.getElementById("phaseSwitch");
+  ps.value=get("fl_phase_override")||"auto";
+  ps.onchange=function(){ set("fl_phase_override",ps.value); applyTheme(); renderWord(); renderActions(); };
+
+  /* ---------- home-screen / fullscreen ---------- */
+  function makeIcon(size){
+    var c=document.createElement("canvas"); c.width=c.height=size;
+    var x=c.getContext("2d");
+    var g=x.createLinearGradient(0,0,0,size);
+    g.addColorStop(0,"#0b1026"); g.addColorStop(1,"#20264d");
+    x.fillStyle=g; x.fillRect(0,0,size,size);
+    var cx=size/2, hy=size*0.64;
+    var rg=x.createRadialGradient(cx,hy,0,cx,hy,size*0.55);
+    rg.addColorStop(0,"rgba(232,184,102,0.95)");
+    rg.addColorStop(0.45,"rgba(232,184,102,0.18)");
+    rg.addColorStop(1,"rgba(232,184,102,0)");
+    x.fillStyle=rg; x.fillRect(0,0,size,size);
+    x.beginPath(); x.arc(cx,hy,size*0.17,Math.PI,0); x.closePath();
+    x.fillStyle="#f0c674"; x.fill();
+    x.strokeStyle="rgba(244,241,232,0.55)"; x.lineWidth=Math.max(2,size*0.014);
+    x.beginPath(); x.moveTo(size*0.13,hy); x.lineTo(size*0.87,hy); x.stroke();
+    return c.toDataURL("image/png");
+  }
+  function injectManifest(){
+    try{
+      // iOS "Add to Home Screen" ignores the manifest and needs a PNG apple-touch-icon,
+      // which we can't ship as a static file without a build step — so draw one at runtime.
+      if(!document.querySelector('link[rel="apple-touch-icon"]')){
+        var a=document.createElement("link"); a.rel="apple-touch-icon"; a.href=makeIcon(180);
+        document.head.appendChild(a);
+      }
+      // Fallback manifest only if the static one failed to load (e.g. opened as a bare file).
+      if(!document.querySelector('link[rel="manifest"]')){
+        var m={
+          name:"First Light", short_name:"First Light",
+          start_url:".", scope:".",
+          display:"fullscreen", display_override:["fullscreen","standalone","minimal-ui"],
+          orientation:"portrait",
+          background_color:"#0b1026", theme_color:"#0b1026",
+          icons:[
+            {src:makeIcon(192),sizes:"192x192",type:"image/png",purpose:"any"},
+            {src:makeIcon(512),sizes:"512x512",type:"image/png",purpose:"any"},
+            {src:makeIcon(512),sizes:"512x512",type:"image/png",purpose:"maskable"}
+          ]
+        };
+        var blob=new Blob([JSON.stringify(m)],{type:"application/manifest+json"});
+        var l=document.createElement("link"); l.rel="manifest"; l.href=URL.createObjectURL(blob);
+        document.head.appendChild(l);
+      }
+    }catch(e){}
+  }
+
+  var deferredPrompt=null;
+  window.addEventListener("beforeinstallprompt",function(e){
+    e.preventDefault(); deferredPrompt=e;
+    var b=document.getElementById("installBtn");
+    if(b){ b.textContent="Add to home screen"; b.dataset.mode="prompt"; }
+  });
+  window.addEventListener("appinstalled",function(){
+    var w=document.getElementById("footInstallWrap"); if(w) w.style.display="none";
+    closeModal();
+  });
+
+  function isStandalone(){
+    return navigator.standalone===true ||
+      (window.matchMedia && (matchMedia("(display-mode: standalone)").matches ||
+        matchMedia("(display-mode: fullscreen)").matches || matchMedia("(display-mode: minimal-ui)").matches));
+  }
+  function initApp(){
+    injectManifest();
+    var wrap=document.getElementById("footInstallWrap");
+    if(isStandalone()){ if(wrap) wrap.style.display="none"; return; }
+    if(wrap) wrap.style.display="";
+    document.getElementById("footInstall").onclick=openInstall;
+
+    var ua=navigator.userAgent||"";
+    var isIOS=/iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints>1);
+    var isAndroid=/Android/.test(ua);
+    var el=document.documentElement;
+    var fsFn=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
+
+    var steps;
+    if(isIOS){
+      steps=[
+        'Tap the <b>Share</b> button <span class="ic">&#x2191;</span> in Safari’s bottom bar',
+        'Scroll down and tap <b>Add to Home Screen</b>',
+        'Tap <b>Add</b>, then open First Light from its new icon'
+      ];
+      document.getElementById("fsBtn").style.display="none";
+      document.getElementById("installBtn").textContent="Show me how";
+    } else if(isAndroid){
+      steps=[
+        'Tap the <span class="ic">&#8942;</span> menu, top-right in Chrome',
+        'Tap <b>Add to Home screen</b> (or <b>Install app</b>)',
+        'Confirm, then open it from the new icon'
+      ];
+    } else {
+      steps=[
+        'Click the <b>install</b> icon in the address bar, or open the <span class="ic">&#8942;</span> menu',
+        'Choose <b>Install First Light…</b>',
+        'It opens in its own full-screen window'
+      ];
+    }
+    document.getElementById("addStepsList").innerHTML=steps.map(function(s){return "<li>"+s+"</li>";}).join("");
+
+    if(!fsFn) document.getElementById("fsBtn").style.display="none";
+
+    document.getElementById("installBtn").onclick=function(){
+      if(deferredPrompt && typeof deferredPrompt.prompt==="function"){
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(){ deferredPrompt=null; });
+        return;
+      }
+      document.getElementById("addSteps").classList.toggle("on");
+    };
+    document.getElementById("fsBtn").onclick=function(){
+      if(fsFn){ try{ fsFn.call(el); }catch(e){} }
+    };
+  }
+
+  function tick(){
+    var d=new Date();
+    var hh=d.getHours(), mm=d.getMinutes();
+    var ap=hh>=12?"pm":"am"; var h12=hh%12; if(h12===0)h12=12;
+    document.getElementById("clock").textContent=h12+":"+(mm<10?"0":"")+mm+" "+ap;
+  }
+
+  applyTheme(); renderWord(); buildMiniRoles(); renderActions();
+  renderHelpThemes(); renderReflectRow(); migrateStreak();
+  initApp();
+
+  /* lock the app before anything is on screen, if a lock is set */
+  if(lockOn()){ lockNow(); tryBio(); }
+  applyDiscreet();
+
+  /* first day: one question, then the card */
+  if(needsFirstRun()){
+    showFirstRun();
+  } else {
+    // existing / returning user — already past the first day
+    if(!get(LS.onboarded)) set(LS.onboarded,"1");
+    if(!get(LS.firstSeen)) set(LS.firstSeen,"0");
+    renderCardHint();
+  }
+
+  /* offline: cache the app so it opens with no signal */
+  if("serviceWorker" in navigator && location.protocol.indexOf("http")===0){
+    window.addEventListener("load",function(){
+      navigator.serviceWorker.register("/sw.js").catch(function(){});
+    });
+  }
+  tick(); setInterval(tick,20000);
+  setInterval(function(){
+    applyTheme();
+    if(document.getElementById("modalBack").classList.contains("on")) return;
+    if(document.getElementById("miniRoles").classList.contains("on")) return;
+    renderWord(); renderActions();
+  }, 60*1000);
+})();
+</script>
+</body>
+</html>
