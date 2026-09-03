@@ -66,6 +66,8 @@
   }
   .role-swap:hover{border-bottom-color:var(--accent)}
   .rs-caret{margin-left:3px;font-size:0.85em;opacity:0.7}
+  .role-swap.rs-plain{border-bottom:none}
+  .role-swap.rs-plain .rs-caret{margin-left:2px;opacity:0.85;border-bottom:1px dotted rgba(232,184,102,0.55)}
   .mini-roles{display:none;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
   .mini-roles.on{display:flex;animation:miniIn .16s ease}
   @keyframes miniIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
@@ -630,7 +632,7 @@
     day:[
       "The day is loud now. Keep one promise you made this morning. One kept promise changes the whole day.",
       "You will be tired and a little provoked by 3pm. Decide right now that tired-you still keeps his word.",
-      "Do the next right thing in front of you. That's the whole method.",
+      "When the day is too much to hold, stop trying to hold all of it. Do the one next right thing in front of you, then the next.",
       "You are allowed to start the day over at noon. Take the reset.",
       "The version of you that people count on is the one who does the boring right thing when it's inconvenient."
     ],
@@ -1080,18 +1082,35 @@
     }).map(function(m){ return m.t; });
   }
 
+  // every line that could show for this phase + role
+  function fullPool(p){
+    if(p==="morning") return merge(MORNING[role]||[], mineFor("morning"));
+    var rl=(PHASE_BY_ROLE[p] && PHASE_BY_ROLE[p][role]) || [];
+    return merge(rl, PHASE_GENERAL[p] || PHASE_GENERAL.day).concat(mineFor(p));
+  }
+  // lines actually written for this man — his role's lines and his own
+  function roleLinesFor(p){
+    return p==="morning" ? (MORNING[role]||[]) : ((PHASE_BY_ROLE[p] && PHASE_BY_ROLE[p][role]) || []);
+  }
+  function preferredPool(p){ return merge(roleLinesFor(p), mineFor(p)); }
+
+  // prefer a line written for him; fall back to the shared pool once those are used up
+  function pickWordFor(p){
+    var pref=preferredPool(p).filter(function(x){ return seen.indexOf(x)===-1; });
+    return pref.length ? pickFresh(pref) : pickFresh(fullPool(p));
+  }
   // the word for this exact moment: stable for the day per phase+role, fresh across days
-  function wordForToday(phaseKey, poolArr){
-    var key=today()+"|"+phaseKey+"|"+role;
+  function wordForToday(p){
+    var key=today()+"|"+p+"|"+role;
     var store; try{ store=JSON.parse(get(LS.todayWord)||"{}"); }catch(e){ store={}; }
-    if(store && store.key===key && store.text && poolArr.indexOf(store.text)!==-1) return store.text;
-    var t=pickFresh(poolArr);
+    if(store && store.key===key && store.text && fullPool(p).indexOf(store.text)!==-1) return store.text;
+    var t=pickWordFor(p);
     set(LS.todayWord, JSON.stringify({ key:key, text:t }));
     return t;
   }
-  function newWordForToday(phaseKey, poolArr){
-    var t=pickFresh(poolArr);
-    set(LS.todayWord, JSON.stringify({ key: today()+"|"+phaseKey+"|"+role, text:t }));
+  function newWordForToday(p){
+    var t=pickWordFor(p);
+    set(LS.todayWord, JSON.stringify({ key: today()+"|"+p+"|"+role, text:t }));
     return t;
   }
 
@@ -1153,24 +1172,25 @@
     return { role:rl, all:merge(rl, PRAYERS) };
   }
 
-  function kickerHTML(prefix){
-    return prefix + ' <button type="button" class="role-swap" id="roleSwap">' +
-      role + '<span class="rs-caret">▾</span></button>';
-  }
-  function wordPool(p){
-    if(p==="morning") return merge(MORNING[role], mineFor("morning"));
-    var rl=(PHASE_BY_ROLE[p] && PHASE_BY_ROLE[p][role]) || [];
-    return merge(rl, PHASE_GENERAL[p] || PHASE_GENERAL.day).concat(mineFor(p));
+  function kickerHTML(prefix, withRole){
+    var caret='<span class="rs-caret">▾</span>';
+    if(withRole){
+      return prefix + ' <button type="button" class="role-swap" id="roleSwap">' + role + caret + '</button>';
+    }
+    return prefix + ' <button type="button" class="role-swap rs-plain" id="roleSwap" aria-label="who are you today">' + caret + '</button>';
   }
   function renderWord(fresh){
     var p=currentPhase();
-    document.getElementById("wordKicker").innerHTML =
-      kickerHTML(p==="morning" ? "This morning, as a" : THEMES[p].name+", as a");
-    var pool=wordPool(p);
     var el=document.getElementById("wordText");
-    var text = fresh ? newWordForToday(p, pool) : wordForToday(p, pool);
+    var text = fresh ? newWordForToday(p) : wordForToday(p);
     el.textContent = text;
     markSeen(text);
+
+    // only claim "as a Husband" when the line was actually written for him
+    var base = p==="morning" ? "This morning" : THEMES[p].name;
+    var forHim = roleLinesFor(p).indexOf(text) !== -1;
+    document.getElementById("wordKicker").innerHTML =
+      forHim ? kickerHTML(base + ", as a", true) : kickerHTML(base, false);
   }
 
   /* anchor */
@@ -1563,6 +1583,13 @@
   function keptSomething(){
     return !!(get(LS.anchorText) || loadMine().length || parseInt(get(LS.total)||"0",10)>=2 || get(LS.remind) || get(LS.backup));
   }
+  function keptWhat(){
+    if(get(LS.anchorText)) return "a promise";
+    if(loadMine().length) return "words of your own";
+    if(get(LS.backup)) return "someone to reach";
+    if(get(LS.remind)) return "reminders";
+    return null;
+  }
 
   function needsFirstRun(){ return !get(LS.onboarded) && !get(LS.role); }
   function aRole(r){ return (/^[AEIOU]/.test(r) ? "an " : "a ") + r; }
@@ -1638,7 +1665,10 @@
     } else if((ph==="predawn"||ph==="morning") && !hasAnchorToday && !hintDone("anchor")){
       hint={ text:"Set one promise for today —", go:"First Light brings it back tonight", act:openAnchor, key:"anchor" };
     } else if(keptSomething() && !lockOn() && !hintDone("lock")){
-      hint={ text:"You're keeping things here now.", go:"lock it?", act:openLock, key:"lock" };
+      var kw=keptWhat();
+      hint = kw
+        ? { text:"You've kept "+kw+" in here.", go:"lock the app so it opens only for you", act:openLock, key:"lock" }
+        : { text:"You've been coming back here.", go:"lock it so it opens only for you", act:openLock, key:"lock" };
     }
     if(!hint) return;
     var t=document.createElement("span"); t.textContent=hint.text+" ";

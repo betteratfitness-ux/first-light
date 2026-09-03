@@ -1,5 +1,5 @@
 /* First Light — offline service worker */
-var CACHE = "first-light-v20";
+var CACHE = "first-light-v21";
 var SHELL = [
   "/",
   "/index.html",
